@@ -179,6 +179,7 @@ func init() {
 		"Choose whether the rule matches an identifier or a domain.":    "Indiquez si la règle porte sur un identifiant ou sur un domaine.",
 		"Enter the identifier or domain to match.":                      "Indiquez l'identifiant ou le domaine à reconnaître.",
 		"A domain rule matches a bare domain, e.g. example.com (no @).": "Une règle de domaine porte sur un domaine seul, par exemple example.com (sans @).",
+
 		"Pick a valid target.":                       "Choisissez une destination valide.",
 		"A rule for this domain already exists.":     "Une règle existe déjà pour ce domaine.",
 		"A rule for this identifier already exists.": "Une règle existe déjà pour cet identifiant.",

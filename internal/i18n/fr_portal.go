@@ -185,11 +185,12 @@ func init() {
 		"This device":                                                        "Cet appareil",
 		"signed in":                                                          "connecté le",
 		"expires %s":                                                         "expire le %s",
-		"Sign out this session? The device will need to sign in again.":      "Déconnecter cette session ? L'appareil devra se reconnecter.",
-		"Revoke session":                                                     "Révoquer la session",
-		"Revoke":                                                             "Révoquer",
-		"Unknown device":                                                     "Appareil inconnu",
-		"Browser":                                                            "Navigateur",
+
+		"Sign out this session? The device will need to sign in again.": "Déconnecter cette session ? L'appareil devra se reconnecter.",
+		"Revoke session": "Révoquer la session",
+		"Revoke":         "Révoquer",
+		"Unknown device": "Appareil inconnu",
+		"Browser":        "Navigateur",
 
 		// Two-factor enrollment and recovery codes.
 		"Set up two-factor": "Activer la double authentification",
@@ -207,10 +208,13 @@ func init() {
 		"Copy all":                           "Tout copier",
 		"Done":                               "Terminé",
 		"Two-factor authentication required": "Double authentification requise",
-		"The application you are opening requires a second factor.":                                                                                   "L'application que vous ouvrez exige un second facteur.",
-		"Your administrator requires a second factor for your account.":                                                                               "Votre administrateur exige un second facteur pour votre compte.",
-		"Your password alone is not enough to continue.":                                                                                              "Votre mot de passe seul ne suffit pas pour continuer.",
+
+		"The application you are opening requires a second factor.":     "L'application que vous ouvrez exige un second facteur.",
+		"Your administrator requires a second factor for your account.": "Votre administrateur exige un second facteur pour votre compte.",
+		"Your password alone is not enough to continue.":                "Votre mot de passe seul ne suffit pas pour continuer.",
+
 		"You already use an authenticator app, but this session was opened before it was asked for. Sign in again and enter your code when prompted.": "Vous utilisez déjà une application d'authentification, mais cette session a été ouverte avant qu'elle soit exigée. Reconnectez-vous et saisissez votre code lorsqu'il vous est demandé.",
+
 		"Sign out and sign in again":  "Se déconnecter et se reconnecter",
 		"Set up an authenticator app": "Configurer une application d'authentification",
 		"Scan a QR code with an app such as 1Password, Bitwarden, Google Authenticator or Aegis, then enter the code it shows. You will continue right after.": "Scannez un QR code avec une application comme 1Password, Bitwarden, Google Authenticator ou Aegis, puis saisissez le code qu'elle affiche. Vous continuerez juste après.",
