@@ -101,7 +101,31 @@
 
 {{define "adminnav"}}
 {{$a := .Active}}
-<nav class="sidenav" aria-label="{{t "Administration"}}">
+<select class="select md:hidden" data-nav-select aria-label="{{t "Administration"}}">
+  <option value="/admin" {{if eq $a "dashboard"}}selected{{end}}>{{t "Overview"}}</option>
+  <optgroup label="{{t "Applications"}}">
+    <option value="/admin/applications" {{if eq $a "apps"}}selected{{end}}>{{t "Applications"}}</option>
+  </optgroup>
+  <optgroup label="{{t "Accounts"}}">
+    <option value="/admin/users" {{if eq $a "users"}}selected{{end}}>{{t "Users"}}</option>
+    <option value="/admin/groups" {{if eq $a "groups"}}selected{{end}}>{{t "Groups"}}</option>
+  </optgroup>
+  <optgroup label="{{t "Identity sources"}}">
+    <option value="/admin/ldap" {{if eq $a "ldap"}}selected{{end}}>{{t "Directories"}}</option>
+    <option value="/admin/providers" {{if eq $a "providers"}}selected{{end}}>{{t "Providers"}}</option>
+    <option value="/admin/routing" {{if eq $a "routing"}}selected{{end}}>{{t "Login routing"}}</option>
+  </optgroup>
+  <optgroup label="{{t "Settings"}}">
+    <option value="/admin/settings/branding" {{if eq $a "branding"}}selected{{end}}>{{t "Branding"}}</option>
+    <option value="/admin/settings/email" {{if eq $a "email"}}selected{{end}}>{{t "Email"}}</option>
+    <option value="/admin/settings/security" {{if eq $a "security"}}selected{{end}}>{{t "Security"}}</option>
+  </optgroup>
+  <optgroup label="{{t "System"}}">
+    <option value="/admin/settings/system" {{if eq $a "system"}}selected{{end}}>{{t "Diagnostics"}}</option>
+    <option value="/admin/audit" {{if eq $a "audit"}}selected{{end}}>{{t "Activity"}}</option>
+  </optgroup>
+</select>
+<nav class="sidenav hidden md:block" aria-label="{{t "Administration"}}">
   <a href="/admin" class="sidenav-link {{if eq $a "dashboard"}}sidenav-active{{end}}" {{if eq $a "dashboard"}}aria-current="page"{{end}}>{{t "Overview"}}</a>
   <h4 class="sidenav-title">{{t "Applications"}}</h4>
   <a href="/admin/applications" class="sidenav-link {{if eq $a "apps"}}sidenav-active{{end}}" {{if eq $a "apps"}}aria-current="page"{{end}}>{{t "Applications"}}</a>
@@ -124,7 +148,13 @@
 
 {{define "accountnav"}}
 {{$a := .Active}}
-<nav class="sidenav" aria-label="{{t "Account settings"}}">
+<select class="select md:hidden" data-nav-select aria-label="{{t "Account settings"}}">
+  <option value="/profile" {{if eq $a "profile"}}selected{{end}}>{{t "Profile"}}</option>
+  <option value="/profile/password" {{if eq $a "password"}}selected{{end}}>{{t "Password"}}</option>
+  <option value="/profile/security" {{if eq $a "security-account"}}selected{{end}}>{{t "Two-factor & passkeys"}}</option>
+  <option value="/sessions" {{if eq $a "sessions"}}selected{{end}}>{{t "Sessions"}}</option>
+</select>
+<nav class="sidenav hidden md:block" aria-label="{{t "Account settings"}}">
   <a href="/profile" class="sidenav-link {{if eq $a "profile"}}sidenav-active{{end}}" {{if eq $a "profile"}}aria-current="page"{{end}}>{{t "Profile"}}</a>
   <a href="/profile/password" class="sidenav-link {{if eq $a "password"}}sidenav-active{{end}}" {{if eq $a "password"}}aria-current="page"{{end}}>{{t "Password"}}</a>
   <a href="/profile/security" class="sidenav-link {{if eq $a "security-account"}}sidenav-active{{end}}" {{if eq $a "security-account"}}aria-current="page"{{end}}>{{t "Two-factor & passkeys"}}</a>
@@ -230,9 +260,9 @@
   </div>
   {{range .Data.Snippets}}
   <div class="mt-4" data-snippet="{{.ID}}" {{if ne .ID $.Data.Preset}}hidden{{end}}>
-    <div class="relative">
+    <div class="relative flex flex-col">
+      <button type="button" class="btn-ghost order-first mb-1 self-end sm:absolute sm:right-1.5 sm:top-1.5 sm:mb-0" data-copy="{{.Text}}">{{t "Copy"}}</button>
       <pre class="code-block">{{.Text}}</pre>
-      <button type="button" class="btn-ghost absolute right-1.5 top-1.5" data-copy="{{.Text}}">{{t "Copy"}}</button>
     </div>
     {{if .Doc}}<p class="mt-2 text-xs text-muted">{{t "Step-by-step guide:"}} <code class="code-inline">docs/integrations/{{.Doc}}</code></p>{{end}}
   </div>

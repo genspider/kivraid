@@ -41,10 +41,10 @@
   </form>
 
   <div class="card">
-    <div class="flex items-center justify-between gap-4 border-b border-line p-4">
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-line p-4">
       <h2 class="text-sm font-semibold">{{t "Members"}}</h2>
       {{if .Data.Editable}}
-      <form method="post" action="/admin/groups/{{.Data.Group.ID}}/members" class="flex items-center gap-2">
+      <form method="post" action="/admin/groups/{{.Data.Group.ID}}/members" class="flex min-w-0 flex-wrap items-center gap-2">
         <input type="hidden" name="_csrf" value="{{.CSRF}}">
         <input class="input w-48" name="username" list="group-members-dl" placeholder="{{t "Add a member…"}}"
                autocomplete="off" autocapitalize="none" spellcheck="false" required aria-label="{{t "Username to add"}}"

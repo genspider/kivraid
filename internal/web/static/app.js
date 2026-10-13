@@ -640,6 +640,13 @@ document.addEventListener("submit", (e) => {
   btn.innerHTML = `<span class="spinner"></span><span class="sr-only">${label}</span>`;
 });
 
+// On small screens the side menus are a select: picking an entry opens it.
+document.addEventListener("change", (e) => {
+  if (e.target.matches && e.target.matches("[data-nav-select]")) {
+    window.location.href = e.target.value;
+  }
+});
+
 // Dropdown menus: a [data-menu-button] toggles its [data-menu] container;
 // clicking anywhere else (or pressing Escape) closes every open menu.
 function syncMenuAria(menu) {
