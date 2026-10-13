@@ -10,6 +10,7 @@ import (
 
 	"github.com/kivraid/kivraid/internal/mfa"
 	"github.com/kivraid/kivraid/internal/secrets"
+	"github.com/kivraid/kivraid/internal/session"
 	"github.com/kivraid/kivraid/internal/sources/local"
 	"github.com/kivraid/kivraid/internal/store"
 	"github.com/kivraid/kivraid/internal/store/sqlcgen"
@@ -170,5 +171,48 @@ func TestUserPromote(t *testing.T) {
 	}
 	if err := userList([]string{"--config", cfg}); err != nil {
 		t.Errorf("list: %v", err)
+	}
+}
+
+// A reset from the command line revokes the user's sessions and tokens.
+func TestUserResetRevokesAccess(t *testing.T) {
+	cfg := testInstance(t)
+	env := openTestStore(t, cfg)
+	ctx := context.Background()
+	user, err := local.NewSource(env.store).CreateUser(ctx, "admin", "admin@example.com", "Admin", "first-pass-123", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sm := session.NewManager(env.store.DB, env.store.Driver, false, time.Hour, 0)
+	sctx, err := sm.Load(ctx, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sm.Put(sctx, session.KeyUserID, user.ID)
+	token, _, err := sm.Commit(sctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	if err := env.store.CreateRefreshToken(ctx, sqlcgen.CreateRefreshTokenParams{
+		ID: "rt1", UserID: user.ID, ClientID: "c", Scopes: "[]", Audience: "[]", Amr: "[]",
+		AuthTime: now, ExpiresAt: now.Add(time.Hour), CreatedAt: now,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := userResetPassword([]string{"--config", cfg, "--user", "admin", "--password", "a-new-long-passphrase"}); err != nil {
+		t.Fatal(err)
+	}
+	sctx, err = sm.Load(ctx, token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sm.GetString(sctx, session.KeyUserID) != "" {
+		t.Error("the session should be revoked")
+	}
+	var n int
+	if err := env.store.DB.QueryRow(`SELECT COUNT(*) FROM refresh_tokens`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("refresh tokens left: %d (err %v)", n, err)
 	}
 }

@@ -537,6 +537,17 @@ func (s *Server) handleAdminUserPassword(w http.ResponseWriter, r *http.Request)
 			return
 		}
 	}
+	// The administrator resets a password because the user is locked out,
+	// or because it leaked: either way, existing sessions and tokens go
+	// (all but the administrator's own session when resetting their own).
+	if target.ID == currentUser(r).ID {
+		if err := s.revokeOtherSessions(r.Context(), target.ID); err != nil {
+			s.log.Warn("revoke other sessions", "user", target.Username, "err", err)
+		}
+		s.revokeOAuthTokens(r.Context(), target.ID)
+	} else {
+		s.revokeUserAccess(r.Context(), target.ID)
+	}
 	s.audit.Record(r.Context(), currentUser(r).Username, audit.ActionUserPWReset, target.Username, "", s.clientIP(r))
 	http.Redirect(w, r, "/admin/users/"+target.ID+"?pw=1", http.StatusSeeOther)
 }
@@ -585,14 +596,20 @@ func (s *Server) revokeUserAccess(ctx context.Context, userID string) {
 	}); err != nil {
 		s.log.Warn("revoke sessions", "user", userID, "err", err)
 	}
+	s.revokeOAuthTokens(ctx, userID)
+	if s.backchannel != nil {
+		s.backchannel.User(ctx, userID)
+	}
+}
+
+// revokeOAuthTokens deletes the user's access and refresh tokens, so the
+// applications must send them through a fresh sign-in.
+func (s *Server) revokeOAuthTokens(ctx context.Context, userID string) {
 	if err := s.store.DeleteAccessTokensByUser(ctx, userID); err != nil {
 		s.log.Warn("revoke access tokens", "user", userID, "err", err)
 	}
 	if err := s.store.DeleteRefreshTokensByUser(ctx, userID); err != nil {
 		s.log.Warn("revoke refresh tokens", "user", userID, "err", err)
-	}
-	if s.backchannel != nil {
-		s.backchannel.User(ctx, userID)
 	}
 }
 

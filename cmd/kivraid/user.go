@@ -15,8 +15,10 @@ import (
 	"github.com/kivraid/kivraid/internal/audit"
 	"github.com/kivraid/kivraid/internal/config"
 	"github.com/kivraid/kivraid/internal/mfa"
+	"github.com/kivraid/kivraid/internal/oidcserver"
 	"github.com/kivraid/kivraid/internal/pwpolicy"
 	"github.com/kivraid/kivraid/internal/secrets"
+	"github.com/kivraid/kivraid/internal/session"
 	"github.com/kivraid/kivraid/internal/sources/local"
 	"github.com/kivraid/kivraid/internal/store"
 	"github.com/kivraid/kivraid/internal/store/sqlcgen"
@@ -91,6 +93,38 @@ func (e *userEnv) checkPassword(ctx context.Context, pw string) error {
 		return errors.New("this password appears in a known data breach; choose a different one")
 	}
 	return err
+}
+
+// revokeAccess signs the user out everywhere, as the admin's "sign out
+// everywhere" does: Kivraid sessions, OAuth tokens, and the applications
+// that support back-channel logout. A reset from the command line is often
+// a response to a compromise, which a still-valid session would outlive.
+func (e *userEnv) revokeAccess(ctx context.Context, userID string) error {
+	sessions := session.NewManager(e.store.DB, e.store.Driver, false,
+		time.Duration(e.cfg.Session.Lifetime), time.Duration(e.cfg.Session.IdleTimeout))
+	if err := sessions.Iterate(ctx, func(sctx context.Context) error {
+		if sessions.GetString(sctx, session.KeyUserID) == userID {
+			return sessions.Store.Delete(sessions.Token(sctx))
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("revoke sessions: %w", err)
+	}
+	if err := e.store.DeleteAccessTokensByUser(ctx, userID); err != nil {
+		return err
+	}
+	if err := e.store.DeleteRefreshTokensByUser(ctx, userID); err != nil {
+		return err
+	}
+	log := newLogger(e.cfg.LogLevel)
+	_, storage, err := oidcserver.New(ctx, e.cfg, e.store, log)
+	if err != nil {
+		return fmt.Errorf("back-channel logout: %w", err)
+	}
+	backchannel := oidcserver.NewBackchannelLogout(storage, log)
+	backchannel.User(ctx, userID)
+	backchannel.Wait()
+	return nil
 }
 
 // readPassword returns the --password value, or prompts for one.
@@ -229,8 +263,11 @@ func userResetPassword(args []string) error {
 			return err
 		}
 	}
+	if err := env.revokeAccess(ctx, user.ID); err != nil {
+		return err
+	}
 	env.audit.Record(ctx, cliActor, audit.ActionUserPWReset, user.Username, "", "")
-	fmt.Printf("password reset for %s\n", user.Username)
+	fmt.Printf("password reset for %s; their sessions and tokens were revoked\n", user.Username)
 	if !user.Active {
 		fmt.Printf("note: %s is deactivated; run \"kivraid user promote\" or reactivate it in the admin to let it sign in\n", user.Username)
 	}
@@ -263,8 +300,11 @@ func userResetMFA(args []string) error {
 	if err := mfa.NewManager(env.store, secrets.DeriveKey(env.cfg.SecretKey, "totp-secrets")).Disable(ctx, user.ID); err != nil {
 		return err
 	}
+	if err := env.revokeAccess(ctx, user.ID); err != nil {
+		return err
+	}
 	env.audit.Record(ctx, cliActor, audit.ActionMFADisable, user.Username, "reset from the command line", "")
-	fmt.Printf("two-factor authentication reset for %s; they can sign in with their password and enroll again\n", user.Username)
+	fmt.Printf("two-factor authentication reset for %s; their sessions and tokens were revoked, and they can sign in with their password and enroll again\n", user.Username)
 	return nil
 }
 

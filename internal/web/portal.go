@@ -102,6 +102,17 @@ func (s *Server) handleProfilePassword(w http.ResponseWriter, r *http.Request) {
 		fail(s.t(r, "The directory refused the password change. Contact your administrator."))
 		return
 	}
+	// Whoever else holds a session or a token (the reason for changing a
+	// password is often that it leaked) loses it; this browser stays
+	// signed in, on a fresh session token.
+	if err := s.sessions.RenewToken(r.Context()); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	if err := s.revokeOtherSessions(r.Context(), user.ID); err != nil {
+		s.log.Warn("revoke other sessions", "user", user.Username, "err", err)
+	}
+	s.revokeOAuthTokens(r.Context(), user.ID)
 	s.audit.Record(r.Context(), user.Username, audit.ActionPasswordChange, "", "source="+user.Source, s.clientIP(r))
 	s.log.Info("password changed", "user", user.Username, "source", user.Source)
 	http.Redirect(w, r, "/profile/password?pw=1", http.StatusSeeOther)
@@ -202,25 +213,35 @@ func (s *Server) handleSessionRevoke(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSessionsRevokeOthers(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
-	currentToken := s.sessions.Token(r.Context())
+	if err := s.revokeOtherSessions(r.Context(), user.ID); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.audit.Record(r.Context(), user.Username, audit.ActionSessionRevoke, "", "all other sessions", s.clientIP(r))
+	http.Redirect(w, r, "/sessions?revoked=others", http.StatusSeeOther)
+}
+
+// revokeOtherSessions signs the user out of every session but the current
+// one, including the applications those sessions opened (back-channel
+// logout).
+func (s *Server) revokeOtherSessions(ctx context.Context, userID string) error {
+	currentToken := s.sessions.Token(ctx)
 	var sids []string
-	err := s.sessions.Iterate(r.Context(), func(ctx context.Context) error {
-		if s.sessions.GetString(ctx, session.KeyUserID) != user.ID {
+	err := s.sessions.Iterate(ctx, func(sctx context.Context) error {
+		if s.sessions.GetString(sctx, session.KeyUserID) != userID {
 			return nil
 		}
-		if token := s.sessions.Token(ctx); token != currentToken {
-			sids = append(sids, s.sessionSIDs(ctx)...)
+		if token := s.sessions.Token(sctx); token != currentToken {
+			sids = append(sids, s.sessionSIDs(sctx)...)
 			return s.sessions.Store.Delete(token)
 		}
 		return nil
 	})
 	if err != nil {
-		s.serverError(w, r, err)
-		return
+		return err
 	}
-	s.logoutSessionApps(r.Context(), sids...)
-	s.audit.Record(r.Context(), user.Username, audit.ActionSessionRevoke, "", "all other sessions", s.clientIP(r))
-	http.Redirect(w, r, "/sessions?revoked=others", http.StatusSeeOther)
+	s.logoutSessionApps(ctx, sids...)
+	return nil
 }
 
 // summarizeUA turns a User-Agent header into a short human label in lang.

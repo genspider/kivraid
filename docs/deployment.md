@@ -103,7 +103,9 @@ kivraid user reset-password --config kivraid.yaml --user admin [--must-change]
 kivraid user promote        --config kivraid.yaml --user alice@example.com
 ```
 
-`--user` takes a username or an email address. `reset-mfa` removes the
+`reset-password` and `reset-mfa` also sign the user out everywhere
+(sessions, OAuth tokens, back-channel logout). `--user` takes a username or
+an email address. `reset-mfa` removes the
 authenticator app and its recovery codes (passkeys are kept), as the admin's
 *Reset two-factor* does. `reset-password` prompts for the new password,
 which must follow the password policy; it only applies to local accounts —

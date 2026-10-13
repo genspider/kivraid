@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	jose "github.com/go-jose/go-jose/v4"
@@ -41,7 +42,12 @@ type BackchannelLogout struct {
 	storage *Storage
 	client  *http.Client
 	log     *slog.Logger
+	pending sync.WaitGroup
 }
+
+// Wait blocks until every delivery started so far has finished, for a
+// short-lived process (the CLI) that must not exit before sending.
+func (b *BackchannelLogout) Wait() { b.pending.Wait() }
 
 // NewBackchannelLogout returns a notifier signing with storage's keys.
 func NewBackchannelLogout(storage *Storage, log *slog.Logger) *BackchannelLogout {
@@ -105,7 +111,9 @@ func (b *BackchannelLogout) deliverAll(targets []logoutTarget) {
 		if t.uri == "" {
 			continue // the application does not support back-channel logout
 		}
+		b.pending.Add(1)
 		go func() {
+			defer b.pending.Done()
 			ctx, cancel := context.WithTimeout(context.Background(), logoutDeliveryTimeout)
 			defer cancel()
 			if err := b.deliver(ctx, t); err != nil {
