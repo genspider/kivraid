@@ -33,6 +33,8 @@
   --line: rgb(227 230 236);
   --line-soft: rgb(239 241 244);
   --line-strong: rgb(205 210 220);
+  /* Form field borders: 3:1 against the surfaces (WCAG 1.4.11). */
+  --input-line: rgb(134 144 162);
   --fg: rgb(29 41 57);
   --muted: rgb(71 84 103);
   --faint: rgb(102 112 133);
@@ -40,8 +42,8 @@
   --accent-hover: rgb(58 111 214);
   --accent-soft: rgb(238 243 253);
   --on-accent: rgb(255 255 255);
-  --danger: rgb(201 69 58);
-  --danger-hover: rgb(168 54 45);
+  --danger: rgb(184 54 44);
+  --danger-hover: rgb(158 44 36);
   --danger-soft: rgb(253 239 236);
   --warn: rgb(143 100 22);
   --warn-soft: rgb(253 246 233);
@@ -70,13 +72,16 @@
   --line: rgb(45 51 62);
   --line-soft: rgb(36 41 51);
   --line-strong: rgb(58 65 78);
+  --input-line: rgb(104 113 130);
   --fg: rgb(228 231 236);
   --muted: rgb(179 186 198);
   --faint: rgb(143 152 168);
   --accent: rgb(107 151 236);
   --accent-hover: rgb(130 169 240);
   --accent-soft: rgb(26 39 64);
-  --on-accent: rgb(255 255 255);
+  /* Dark text on the light accent and danger fills: white reads at under
+   * 3:1 on them. */
+  --on-accent: rgb(13 22 40);
   --danger: rgb(235 122 111);
   --danger-hover: rgb(242 154 144);
   --danger-soft: rgb(51 25 26);
@@ -227,6 +232,10 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
     border-radius: 2px;
+  }
+  /* The accent hardly differs from the brand blue of the top bar. */
+  header :focus-visible {
+    outline-color: #fff;
   }
 
   ::selection {
@@ -449,7 +458,8 @@
   .input,
   .textarea,
   .select {
-    @apply w-full rounded-md border border-line bg-sunken text-sm text-fg placeholder:text-faint;
+    @apply w-full rounded-md border bg-sunken text-sm text-fg placeholder:text-faint;
+    border-color: var(--input-line);
     transition:
       border-color 0.15s,
       box-shadow 0.15s;
@@ -464,7 +474,8 @@
   .input:hover,
   .textarea:hover,
   .select:hover {
-    @apply border-line-strong bg-raised;
+    @apply bg-raised;
+    border-color: var(--faint);
   }
   .input:focus,
   .textarea:focus,
