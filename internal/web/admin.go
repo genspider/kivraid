@@ -325,6 +325,11 @@ func (f *appForm) validate() (redirects, postLogout []string, err error) {
 	return redirects, postLogout, nil
 }
 
+// unsafeRedirectSchemes would run script or read local content where a
+// browser follows them (a form_post response targets the redirect URI);
+// native clients use their own custom schemes, which remain allowed.
+var unsafeRedirectSchemes = map[string]bool{"javascript": true, "data": true, "vbscript": true, "file": true}
+
 // parseURIList reads one absolute URI per line; invalid is the first line
 // that is not one.
 func parseURIList(raw string) (uris []string, invalid string) {
@@ -335,7 +340,7 @@ func parseURIList(raw string) (uris []string, invalid string) {
 			continue
 		}
 		u, err := url.Parse(line)
-		if err != nil || u.Scheme == "" {
+		if err != nil || u.Scheme == "" || unsafeRedirectSchemes[strings.ToLower(u.Scheme)] {
 			return nil, line
 		}
 		out = append(out, line)
