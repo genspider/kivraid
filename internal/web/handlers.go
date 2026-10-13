@@ -178,6 +178,7 @@ func (s *Server) handleLoginPasswordSubmit(w http.ResponseWriter, r *http.Reques
 	next := s.safeNext(s.sessions.GetString(r.Context(), session.KeyPendingNext), "/")
 	ip := s.clientIP(r)
 	loginKey := strings.ToLower(identifier)
+	limitKey := s.rateLimitKey(r.Context(), identifier)
 
 	fail := func(status int, msg string) {
 		w.WriteHeader(status)
@@ -187,7 +188,7 @@ func (s *Server) handleLoginPasswordSubmit(w http.ResponseWriter, r *http.Reques
 		})
 	}
 
-	if !s.ipLimiter.Allow(ip) || s.userLimiter.Blocked(loginKey) {
+	if !s.ipLimiter.Allow(ip) || s.userLimiter.Blocked(limitKey) {
 		s.audit.Record(r.Context(), loginKey, audit.ActionLoginThrottled, "", "", ip)
 		fail(http.StatusTooManyRequests, s.t(r, "Too many attempts. Please wait a minute and try again."))
 		return
@@ -203,7 +204,7 @@ func (s *Server) handleLoginPasswordSubmit(w http.ResponseWriter, r *http.Reques
 		}
 	}
 	if errors.Is(err, local.ErrBadCredentials) {
-		s.userLimiter.Allow(loginKey) // consume a failure token
+		s.userLimiter.Allow(limitKey) // consume a failure token
 		s.audit.Record(r.Context(), loginKey, audit.ActionLoginFailed, "", "", ip)
 		fail(http.StatusUnauthorized, s.t(r, "Invalid username or password."))
 		return
@@ -235,6 +236,21 @@ func (s *Server) handleLoginPasswordSubmit(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	http.Redirect(w, r, next, http.StatusSeeOther)
+}
+
+// rateLimitKey is the per-account throttling key for a typed identifier:
+// the account's username when the identifier names one, by username or by
+// email, so that alternating "alice" and "alice@example.com" draws on one
+// budget; otherwise the identifier itself.
+func (s *Server) rateLimitKey(ctx context.Context, identifier string) string {
+	id := strings.ToLower(strings.TrimSpace(identifier))
+	if u, err := s.store.GetUserByUsername(ctx, id); err == nil {
+		return u.Username
+	}
+	if u, err := s.store.GetUserByEmail(ctx, id); err == nil {
+		return u.Username
+	}
+	return id
 }
 
 // completeLogin establishes a full authenticated session. A fresh token

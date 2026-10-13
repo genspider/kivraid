@@ -132,6 +132,12 @@ func (s *Server) handleMFADisable(w http.ResponseWriter, r *http.Request) {
 		s.renderProfile(w, r, user, s.t(r, "Two-factor authentication is required for your account, so it cannot be turned off."), false)
 		return
 	}
+	// Same per-account budget as the sign-in steps: a stolen session must
+	// not be able to guess codes here without limit.
+	if s.userLimiter.Blocked(user.Username) {
+		s.renderProfile(w, r, user, s.t(r, "Too many attempts. Please wait a minute and try again."), false)
+		return
+	}
 	code := r.PostFormValue("code")
 	ok, err := s.mfa.ValidateForUser(r.Context(), user, code)
 	if err != nil {
@@ -147,6 +153,7 @@ func (s *Server) handleMFADisable(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !ok {
+		s.userLimiter.Allow(user.Username) // consume a failure token
 		s.renderProfile(w, r, user, s.t(r, "Enter a current authenticator code to disable two-factor."), false)
 		return
 	}
@@ -166,12 +173,17 @@ func (s *Server) handleMFARegenerateRecovery(w http.ResponseWriter, r *http.Requ
 		http.Redirect(w, r, "/profile/security", http.StatusSeeOther)
 		return
 	}
+	if s.userLimiter.Blocked(user.Username) {
+		s.renderProfile(w, r, user, s.t(r, "Too many attempts. Please wait a minute and try again."), false)
+		return
+	}
 	ok, err := s.mfa.ValidateForUser(r.Context(), user, r.PostFormValue("code"))
 	if err != nil {
 		s.serverError(w, r, err)
 		return
 	}
 	if !ok {
+		s.userLimiter.Allow(user.Username) // consume a failure token
 		s.renderProfile(w, r, user, s.t(r, "Enter a current authenticator code to regenerate recovery codes."), false)
 		return
 	}
