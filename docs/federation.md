@@ -67,6 +67,9 @@ upstream owns authentication.
 The provider's groups claim is mirrored onto Kivraid groups on every login
 (like the LDAP group sync): matching groups are created by name, tagged to
 the provider, and the user's membership in them is refreshed each time. A
+name already used by a local, directory or other provider's group is
+skipped (and logged): the claim never joins a group the provider does not
+own. A
 group flagged **"Members are administrators"** therefore lets the upstream
 drive who administers Kivraid.
 

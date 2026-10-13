@@ -222,6 +222,15 @@ func (s *Server) syncUpstreamGroups(ctx context.Context, p sqlcgen.UpstreamProvi
 		if err != nil {
 			return err
 		}
+		// Only this provider's own groups are mirrored. A same-named local,
+		// directory or other-provider group is never joined: the upstream
+		// would otherwise grant its access (or the administrator role) to
+		// anyone whose claim names it.
+		if g.Source != "upstream" || g.UpstreamSourceID == nil || *g.UpstreamSourceID != p.ID {
+			s.log.Warn("federated group sync skipped: name owned by another source",
+				"provider", p.Name, "group", name, "source", g.Source)
+			continue
+		}
 		// Ignore a duplicate membership (user already in a same-named group).
 		if err := q.AddUserGroup(ctx, sqlcgen.AddUserGroupParams{UserID: userID, GroupID: g.ID}); err != nil && !isUniqueViolation(err) {
 			return err
