@@ -99,9 +99,19 @@ func TestEndSessionDestroysWebSession(t *testing.T) {
 	c := newClient(t)
 	login(t, c, ts.URL, "alice", "s3cret-pass")
 
-	// RP-initiated logout without id_token_hint: op redirects to the
-	// default logout URI; the Kivraid session must be gone either way.
-	resp, err := c.Get(ts.URL + "/end_session")
+	// RP-initiated logout without id_token_hint: any site could send the
+	// browser here, so the user is asked to confirm and stays signed in.
+	status, page := getPage(t, c, ts.URL+"/end_session?state=xyz")
+	if status != http.StatusOK || !strings.Contains(page, `action="/end_session"`) || !strings.Contains(page, `name="state" value="xyz"`) {
+		t.Fatalf("end_session without hint: want the confirmation page, got %d", status)
+	}
+	if status, _ := getPage(t, c, ts.URL+"/profile"); status != http.StatusOK {
+		t.Fatalf("an unconfirmed end_session must not sign out, got %d", status)
+	}
+
+	// Confirming (the form posts back with the CSRF token) signs out.
+	csrf := fetchCSRFFromPage(t, c, ts.URL+"/profile")
+	resp, err := c.PostForm(ts.URL+"/end_session", url.Values{"_csrf": {csrf}, "state": {"xyz"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +123,7 @@ func TestEndSessionDestroysWebSession(t *testing.T) {
 	}
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusSeeOther {
-		t.Fatalf("session survived end_session: got %d", resp.StatusCode)
+		t.Fatalf("session survived a confirmed end_session: got %d", resp.StatusCode)
 	}
 }
 

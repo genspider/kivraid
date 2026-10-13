@@ -548,6 +548,41 @@ func (s *Storage) RevokeToken(ctx context.Context, tokenOrTokenID string, userID
 	return nil
 }
 
+// SubjectFromIDTokenHint verifies an id_token_hint against the published
+// signing keys and issuer, and returns its subject. Expiry is not checked:
+// RP-initiated logout routinely sends an expired ID token as the hint.
+func (s *Storage) SubjectFromIDTokenHint(hint string) (string, error) {
+	jws, err := jose.ParseSigned(hint, []jose.SignatureAlgorithm{jose.ES256, jose.RS256})
+	if err != nil {
+		return "", err
+	}
+	kid := jws.Signatures[0].Header.KeyID
+	s.keyMu.RLock()
+	keys := s.keys
+	s.keyMu.RUnlock()
+	for _, k := range keys {
+		if k.ID() != kid {
+			continue
+		}
+		payload, err := jws.Verify(k.Key())
+		if err != nil {
+			return "", err
+		}
+		var claims struct {
+			Issuer  string `json:"iss"`
+			Subject string `json:"sub"`
+		}
+		if err := json.Unmarshal(payload, &claims); err != nil {
+			return "", err
+		}
+		if claims.Issuer != s.issuer || claims.Subject == "" {
+			return "", errors.New("id_token_hint not issued here")
+		}
+		return claims.Subject, nil
+	}
+	return "", errors.New("id_token_hint signed with an unknown key")
+}
+
 // --- Signing keys --------------------------------------------------------
 
 func (s *Storage) SigningKey(context.Context) (op.SigningKey, error) {

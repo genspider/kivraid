@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -395,6 +396,15 @@ func (s *Server) upstreamLogoutURL(ctx context.Context) string {
 // OIDC protocol part (token cleanup, post-logout redirect) to op.
 func (s *Server) handleEndSession(w http.ResponseWriter, r *http.Request) {
 	if userID := s.sessions.GetString(r.Context(), session.KeyUserID); userID != "" {
+		// Any site can send the browser here (a top-level GET carries the
+		// session cookie), and ending the session also signs the user out
+		// of every application through back-channel logout. Without an ID
+		// token proving the request comes from an application the user
+		// signed in to, ask first.
+		if !s.endSessionConfirmed(r, userID) {
+			s.renderEndSessionConfirm(w, r, userID)
+			return
+		}
 		if user, err := s.store.GetUserByID(r.Context(), userID); err == nil {
 			s.audit.Record(r.Context(), user.Username, audit.ActionLogout, "", "rp-initiated", s.clientIP(r))
 		}
@@ -417,6 +427,44 @@ func (s *Server) handleEndSession(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s.oidc.ServeHTTP(w, r)
+}
+
+// endSessionConfirmed reports whether an end_session request may sign the
+// user out without asking: its id_token_hint is a valid ID token for this
+// user, or it is the confirmation form posted back with the CSRF token.
+func (s *Server) endSessionConfirmed(r *http.Request, userID string) bool {
+	if hint := r.FormValue("id_token_hint"); hint != "" && s.oidcStore != nil {
+		if sub, err := s.oidcStore.SubjectFromIDTokenHint(hint); err == nil && sub == userID {
+			return true
+		}
+	}
+	if r.Method != http.MethodPost {
+		return false
+	}
+	want := s.sessions.GetString(r.Context(), session.KeyCSRF)
+	got := r.PostFormValue("_csrf")
+	return want != "" && subtle.ConstantTimeCompare([]byte(want), []byte(got)) == 1
+}
+
+type endSessionField struct{ Name, Value string }
+
+// renderEndSessionConfirm asks the user to confirm signing out, posting
+// the original end_session parameters back.
+func (s *Server) renderEndSessionConfirm(w http.ResponseWriter, r *http.Request, userID string) {
+	user, err := s.store.GetUserByID(r.Context(), userID)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	var fields []endSessionField
+	for _, name := range []string{"id_token_hint", "client_id", "post_logout_redirect_uri", "state", "ui_locales", "logout_hint"} {
+		if v := r.FormValue(name); v != "" {
+			fields = append(fields, endSessionField{name, v})
+		}
+	}
+	s.render(w, r, "logout_confirm.html", pageData{
+		Title: "Sign out", CSRF: s.csrfToken(r.Context()), User: user, Data: fields,
+	})
 }
 
 type profileData struct {

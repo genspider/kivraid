@@ -1,0 +1,17 @@
+{{define "content"}}
+<div class="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
+  <span class="inline-flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent">
+    {{icon "sign-out" "size-6"}}
+  </span>
+  <div>
+    <h1 class="page-heading">{{t "Sign out of %s?" brandName}}</h1>
+    <p class="mt-2 text-sm text-muted">{{t "You will also be signed out of the applications that support it."}}</p>
+  </div>
+  <form method="post" action="/end_session" class="mt-2 flex flex-wrap justify-center gap-3">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    {{range .Data}}<input type="hidden" name="{{.Name}}" value="{{.Value}}">{{end}}
+    <button type="submit" class="btn-primary">{{t "Sign out"}}</button>
+    <a href="/" class="btn-secondary">{{t "Stay signed in"}}</a>
+  </form>
+</div>
+{{end}}

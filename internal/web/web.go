@@ -241,7 +241,7 @@ func (s *Server) parsePages(lang, assetV string) error {
 		"admin_users.html", "admin_user_new.html", "admin_user_detail.html",
 		"admin_groups.html", "admin_group_detail.html", "admin_system.html",
 		"admin_dashboard.html", "admin_branding.html", "admin_smtp.html", "admin_security.html",
-		"mfa_required.html",
+		"mfa_required.html", "logout_confirm.html",
 	}
 	for _, page := range withLayout {
 		t, err := template.New("layout.html").Funcs(funcs).
