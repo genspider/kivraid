@@ -60,7 +60,7 @@ func init() {
 		// Sign-in page.
 		"Sign in":                                 "Connexion",
 		"Sign in to %s":                           "Connexion à %s",
-		"Use your directory credentials":          "Utilisez vos identifiants habituels",
+		"Use your usual credentials":              "Utilisez vos identifiants habituels",
 		"Choose an account":                       "Choisissez un compte",
 		"Remove %s from this device":              "Retirer %s de cet appareil",
 		"Remove from this device":                 "Retirer de cet appareil",
