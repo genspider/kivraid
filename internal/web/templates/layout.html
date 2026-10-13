@@ -26,12 +26,14 @@
     </a>
     <nav class="flex min-w-0 items-center gap-1" aria-label="{{t "Main"}}">
       <a href="/" class="nav-link {{if eq .Active "home"}}nav-active{{end}}" {{if eq .Active "home"}}aria-current="page"{{end}}>{{t "Home"}}</a>
-      {{if .User.IsAdmin}}
-      <a href="/admin" class="nav-link {{if eq (navSection .Active) "admin"}}nav-active{{end}}">{{t "Administration"}}</a>
-      {{end}}
     </nav>
 
     <div class="ml-auto flex shrink-0 items-center gap-1">
+      {{/* Administration is a gear beside the avatar, as in codehearth; below
+         md it moves into the account menu. */}}
+      {{if .User.IsAdmin}}
+      <a href="/admin" class="nav-icon hidden md:inline-flex {{if eq (navSection .Active) "admin"}}nav-active{{end}}" aria-label="{{t "Administration"}}" title="{{t "Administration"}}">{{icon "settings" "size-5"}}</a>
+      {{end}}
       <div class="relative ml-1" data-menu>
         <button type="button" data-menu-button aria-expanded="false" aria-controls="account-menu" class="flex cursor-pointer items-center rounded-full p-0.5 ring-white/0 transition hover:ring-2 hover:ring-white/40" aria-label="{{t "Account menu"}}">
           {{if .User.PhotoMime}}
@@ -48,6 +50,7 @@
           <div class="menu-divider"></div>
           <a href="/profile" class="menu-item">{{icon "user"}} {{t "Account settings"}}</a>
           <a href="/sessions" class="menu-item">{{icon "monitor"}} {{t "Sessions"}}</a>
+          {{if .User.IsAdmin}}<a href="/admin" class="menu-item md:hidden">{{icon "settings"}} {{t "Administration"}}</a>{{end}}
           <div class="menu-divider"></div>
           <div class="flex items-center justify-between gap-3 px-4 py-1.5">
             <span class="text-sm">{{t "Theme"}}</span>
