@@ -161,8 +161,20 @@ func (s *Server) handleAdminAuditExport(w http.ResponseWriter, r *http.Request) 
 	_ = cw.Write([]string{"timestamp", "actor", "action", "object", "detail", "ip"})
 	for _, e := range entries {
 		_ = cw.Write([]string{
-			e.Ts.UTC().Format(time.RFC3339), e.Actor, e.Action, e.Object, e.Detail, e.Ip,
+			e.Ts.UTC().Format(time.RFC3339), csvCell(e.Actor), csvCell(e.Action),
+			csvCell(e.Object), csvCell(e.Detail), csvCell(e.Ip),
 		})
 	}
 	cw.Flush()
+}
+
+// csvCell neutralizes spreadsheet formulas. Some fields come from anyone
+// on the internet (a failed login records the identifier typed as the
+// actor), and a cell starting with = + - @ or a control character would
+// run as a formula when an administrator opens the export.
+func csvCell(v string) string {
+	if v != "" && strings.ContainsRune("=+-@\t\r", rune(v[0])) {
+		return "'" + v
+	}
+	return v
 }
