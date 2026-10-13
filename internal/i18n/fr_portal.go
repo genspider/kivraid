@@ -220,9 +220,10 @@ func init() {
 		"Sign out and sign in again":  "Se déconnecter et se reconnecter",
 		"Set up an authenticator app": "Configurer une application d'authentification",
 		"Scan a QR code with an app such as 1Password, Bitwarden, Google Authenticator or Aegis, then enter the code it shows. You will continue right after.": "Scannez un QR code avec une application comme 1Password, Bitwarden, Google Authenticator ou Aegis, puis saisissez le code qu'elle affiche. Vous continuerez juste après.",
-		"Or use your passkey": "Ou utilisez votre clé d'accès",
-		"You have a passkey: signing in with it counts as two-factor.": "Vous avez une clé d'accès : vous connecter avec elle vaut double authentification.",
-		"Sign out to use my passkey":                                   "Me déconnecter pour utiliser ma clé d'accès",
+		"Use your passkey": "Utilisez votre clé d'accès",
+		"To add or remove a two-factor method, sign out and sign in again with your passkey or authenticator code.": "Pour ajouter ou retirer une méthode de double authentification, déconnectez-vous puis reconnectez-vous avec votre clé d'accès ou votre code d'authentification.",
+		"You have a passkey: signing in with it counts as two-factor.":                                              "Vous avez une clé d'accès : vous connecter avec elle vaut double authentification.",
+		"Sign out to use my passkey": "Me déconnecter pour utiliser ma clé d'accès",
 
 		// Emails.
 		"Hi %s,":                                "Bonjour %s,",

@@ -131,6 +131,34 @@ func (s *Server) handleMFARequired(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// factorChangeAllowed reports whether the current session may add or
+// remove a second factor. A user who already has one (an authenticator app
+// or a passkey) must have signed in with it: otherwise the password alone
+// would let anyone enroll their own factor in its place and get through
+// every two-factor requirement. A user with none yet enrolls on trust, as
+// before.
+func (s *Server) factorChangeAllowed(ctx context.Context, user sqlcgen.User) (bool, error) {
+	if s.sessionHasSecondFactor(ctx) {
+		return true, nil
+	}
+	if user.TotpEnabled {
+		return false, nil
+	}
+	if s.webauthn != nil {
+		n, err := s.webauthn.Count(ctx, user.ID)
+		if err != nil {
+			return false, err
+		}
+		if n > 0 {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+// factorsLockedMsg explains why factorChangeAllowed refused.
+const factorsLockedMsg = "To add or remove a two-factor method, sign out and sign in again with your passkey or authenticator code."
+
 // markSecondFactor upgrades the current session once the user has just
 // proven a second factor while signed in (TOTP enrollment).
 func (s *Server) markSecondFactor(ctx context.Context, method string) {

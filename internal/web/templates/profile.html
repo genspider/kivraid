@@ -100,6 +100,7 @@
   <h2 class="page-title">{{t "Two-factor & passkeys"}}</h2>
   <p class="mt-1 text-sm text-muted">{{t "A second step at sign-in protects your account if your password leaks."}}</p>
 </div>
+{{if .Data.FactorsLocked}}<div class="alert-warning mb-4" role="status">{{t "To add or remove a two-factor method, sign out and sign in again with your passkey or authenticator code."}}</div>{{end}}
 <div class="card space-y-4 p-6">
   <div>
     <h2 class="text-sm font-semibold">{{t "Two-factor authentication"}}</h2>
@@ -124,7 +125,7 @@
     </div>
     {{if .Data.MFARequired}}<p class="text-xs text-muted">{{t "Your administrator requires two-factor authentication for your account."}}</p>{{end}}
   </form>
-  {{else}}
+  {{else if not .Data.FactorsLocked}}
   <form method="post" action="/profile/mfa/begin">
     <input type="hidden" name="_csrf" value="{{.CSRF}}">
     <button type="submit" class="btn-primary">{{t "Enable two-factor"}}</button>
@@ -146,18 +147,21 @@
         <p class="truncate text-sm font-medium">{{.Name}}</p>
         <p class="text-xs text-muted">{{t "Added %s" (date .CreatedAt)}}{{if .LastUsedAt.Valid}} · {{t "last used %s" (date .LastUsedAt.Time)}}{{end}}</p>
       </div>
+      {{if not $.Data.FactorsLocked}}
       <form method="post" action="/profile/passkeys/{{.ID}}/delete"
             data-confirm="{{t "Remove this passkey? You'll no longer be able to sign in with it."}}"
             data-confirm-title="{{t "Remove passkey"}}" data-confirm-variant="danger" data-confirm-label="{{t "Remove"}}">
         <input type="hidden" name="_csrf" value="{{$.CSRF}}">
         <button type="submit" class="btn-ghost">{{t "Remove"}}</button>
       </form>
+      {{end}}
     </li>
     {{end}}
   </ul>
   {{else}}
   <p class="text-sm text-muted">{{t "No passkeys registered yet."}}</p>
   {{end}}
+  {{if not .Data.FactorsLocked}}
   <div class="flex flex-wrap items-end gap-3 border-t border-line pt-4">
     <div class="min-w-48 flex-1">
       <label class="label" for="passkey_name">{{t "Passkey name"}}</label>
@@ -166,6 +170,7 @@
     <button type="button" class="btn-secondary" data-passkey-add>{{t "Add passkey"}}</button>
   </div>
   <p data-passkey-error class="alert-danger" role="alert" hidden></p>
+  {{end}}
 </div>
 {{end}}
 

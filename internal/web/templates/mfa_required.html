@@ -16,6 +16,15 @@
       <button type="submit" class="btn-primary">{{t "Sign out and sign in again"}}</button>
     </form>
   </div>
+  {{else if .Data.HasPasskeys}}
+  <div class="card space-y-3 p-6">
+    <h2 class="text-sm font-semibold">{{t "Use your passkey"}}</h2>
+    <p class="text-sm text-muted">{{t "You have a passkey: signing in with it counts as two-factor."}}</p>
+    <form method="post" action="/logout">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <button type="submit" class="btn-primary">{{t "Sign out to use my passkey"}}</button>
+    </form>
+  </div>
   {{else}}
   <div class="card space-y-4 p-6">
     <div>
@@ -27,16 +36,6 @@
       <button type="submit" class="btn-primary">{{t "Set up two-factor"}}</button>
     </form>
   </div>
-  {{if .Data.HasPasskeys}}
-  <div class="card mt-4 space-y-3 p-6">
-    <h2 class="text-sm font-semibold">{{t "Or use your passkey"}}</h2>
-    <p class="text-sm text-muted">{{t "You have a passkey: signing in with it counts as two-factor."}}</p>
-    <form method="post" action="/logout">
-      <input type="hidden" name="_csrf" value="{{.CSRF}}">
-      <button type="submit" class="btn-secondary">{{t "Sign out to use my passkey"}}</button>
-    </form>
-  </div>
-  {{end}}
   {{end}}
 </div>
 {{end}}

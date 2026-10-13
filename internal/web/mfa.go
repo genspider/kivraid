@@ -7,6 +7,7 @@ import (
 	"github.com/kivraid/kivraid/internal/audit"
 	"github.com/kivraid/kivraid/internal/mfa"
 	"github.com/kivraid/kivraid/internal/session"
+	"github.com/kivraid/kivraid/internal/store/sqlcgen"
 )
 
 type mfaEnrollData struct {
@@ -27,6 +28,9 @@ func (s *Server) handleMFABegin(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	if user.TotpEnabled {
 		http.Redirect(w, r, "/profile/security", http.StatusSeeOther)
+		return
+	}
+	if !s.allowFactorChange(w, r, user) {
 		return
 	}
 	secret, err := s.mfa.GenerateSecret(user.Username)
@@ -72,6 +76,9 @@ func (s *Server) handleMFAEnable(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/profile/security", http.StatusSeeOther)
 		return
 	}
+	if !s.allowFactorChange(w, r, user) {
+		return
+	}
 	counter, ok := mfa.MatchCounter(secret, r.PostFormValue("code"), time.Now())
 	if !ok {
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -97,6 +104,21 @@ func (s *Server) handleMFAEnable(w http.ResponseWriter, r *http.Request) {
 		Title: "Recovery codes", Active: "security-account", CSRF: s.csrfToken(r.Context()),
 		User: user, Data: mfaRecoveryData{Codes: codes, Next: next},
 	})
+}
+
+// allowFactorChange enforces factorChangeAllowed for a form post, showing
+// the two-factor page with an explanation when refused.
+func (s *Server) allowFactorChange(w http.ResponseWriter, r *http.Request, user sqlcgen.User) bool {
+	ok, err := s.factorChangeAllowed(r.Context(), user)
+	if err != nil {
+		s.serverError(w, r, err)
+		return false
+	}
+	if !ok {
+		w.WriteHeader(http.StatusForbidden)
+		s.renderProfile(w, r, user, s.t(r, factorsLockedMsg), false)
+	}
+	return ok
 }
 
 // handleMFADisable turns TOTP off after re-verifying a current code.

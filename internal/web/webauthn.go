@@ -6,6 +6,7 @@ import (
 
 	"github.com/kivraid/kivraid/internal/audit"
 	"github.com/kivraid/kivraid/internal/session"
+	"github.com/kivraid/kivraid/internal/store/sqlcgen"
 )
 
 // writeJSONRaw sends an already-marshalled JSON payload.
@@ -23,6 +24,9 @@ func (s *Server) handlePasskeyRegisterBegin(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	user := currentUser(r)
+	if !s.allowPasskeyChange(w, r, user) {
+		return
+	}
 	options, sess, err := s.webauthn.BeginRegistration(r.Context(), user)
 	if err != nil {
 		s.serverError(w, r, err)
@@ -45,6 +49,9 @@ func (s *Server) handlePasskeyRegisterFinish(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "no registration in progress", http.StatusBadRequest)
 		return
 	}
+	if !s.allowPasskeyChange(w, r, user) {
+		return
+	}
 	name := strings.TrimSpace(r.URL.Query().Get("name"))
 	if err := s.webauthn.FinishRegistration(r.Context(), user, []byte(sess), r, name); err != nil {
 		s.log.Warn("passkey registration failed", "user", user.Username, "err", err)
@@ -56,6 +63,20 @@ func (s *Server) handlePasskeyRegisterFinish(w http.ResponseWriter, r *http.Requ
 	writeJSONRaw(w, []byte(`{"ok":true}`))
 }
 
+// allowPasskeyChange enforces factorChangeAllowed for the JSON passkey
+// registration endpoints.
+func (s *Server) allowPasskeyChange(w http.ResponseWriter, r *http.Request, user sqlcgen.User) bool {
+	ok, err := s.factorChangeAllowed(r.Context(), user)
+	if err != nil {
+		s.serverError(w, r, err)
+		return false
+	}
+	if !ok {
+		http.Error(w, s.t(r, factorsLockedMsg), http.StatusForbidden)
+	}
+	return ok
+}
+
 // handlePasskeyDelete removes one of the current user's passkeys.
 func (s *Server) handlePasskeyDelete(w http.ResponseWriter, r *http.Request) {
 	if s.webauthn == nil {
@@ -63,6 +84,9 @@ func (s *Server) handlePasskeyDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := currentUser(r)
+	if !s.allowFactorChange(w, r, user) {
+		return
+	}
 	if err := s.webauthn.Delete(r.Context(), user.ID, r.PathValue("id")); err != nil {
 		s.serverError(w, r, err)
 		return

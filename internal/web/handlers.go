@@ -422,6 +422,7 @@ type profileData struct {
 	RecoveryRemaining int64
 	Passkeys          []sqlcgen.WebauthnCredential
 	PasskeysEnabled   bool
+	FactorsLocked     bool // password-only session of a user who has a factor
 	EmailVerified     bool
 	CanVerifyEmail    bool // local, unverified, and SMTP is configured
 	VerifySent        bool
@@ -452,6 +453,11 @@ func (s *Server) renderProfile(w http.ResponseWriter, r *http.Request, user sqlc
 			return
 		}
 	}
+	factorsOK, err := s.factorChangeAllowed(r.Context(), user)
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
 	// The account settings are split in pages (profile, password,
 	// two-factor & passkeys); a form posted from one re-renders that one.
 	tab, title, active := "profile", "Profile", "profile"
@@ -478,6 +484,7 @@ func (s *Server) renderProfile(w http.ResponseWriter, r *http.Request, user sqlc
 			RecoveryRemaining: recovery,
 			Passkeys:          passkeys,
 			PasskeysEnabled:   s.webauthn != nil,
+			FactorsLocked:     !factorsOK,
 			EmailVerified:     user.EmailVerified,
 			CanVerifyEmail:    user.Source == "local" && !user.EmailVerified && s.smtpEnabled.Load(),
 			VerifySent:        r.URL.Query().Get("vsent") == "1",
