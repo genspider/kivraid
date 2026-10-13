@@ -375,6 +375,7 @@ func (s *Server) Handler() http.Handler {
 	web.Handle("POST /admin/users/{id}/sessions/revoke", s.requireAdmin(http.HandlerFunc(s.handleAdminUserSessionsRevoke)))
 	web.Handle("POST /admin/users/{id}/impersonate", s.requireAdmin(http.HandlerFunc(s.handleAdminUserImpersonate)))
 	web.Handle("POST /admin/users/{id}/verify-email", s.requireAdmin(http.HandlerFunc(s.handleAdminUserSendVerification)))
+	web.Handle("POST /admin/users/{id}/email-verified", s.requireAdmin(http.HandlerFunc(s.handleAdminUserMarkEmailVerified)))
 	web.Handle("POST /admin/users/{id}/delete", s.requireAdmin(http.HandlerFunc(s.handleAdminUserDelete)))
 
 	web.Handle("GET /admin/groups", s.requireAdmin(http.HandlerFunc(s.handleAdminGroups)))

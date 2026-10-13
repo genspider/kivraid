@@ -81,6 +81,27 @@ func (s *Server) handleProfileSendVerification(w http.ResponseWriter, r *http.Re
 
 // handleAdminUserSendVerification sends a verification link to a local user
 // on an admin's behalf.
+// handleAdminUserMarkEmailVerified lets an administrator vouch for a local
+// account's address, the only way to verify it while email delivery is not
+// configured.
+func (s *Server) handleAdminUserMarkEmailVerified(w http.ResponseWriter, r *http.Request) {
+	target, ok := s.loadTargetUser(w, r)
+	if !ok {
+		return
+	}
+	if target.Source != "local" {
+		s.renderError(w, r, http.StatusBadRequest, s.t(r, "Directory-managed email"),
+			s.t(r, "Directory users get their email from the directory; it is trusted as-is."))
+		return
+	}
+	if err := s.markEmailVerified(r.Context(), target.ID); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.audit.Record(r.Context(), currentUser(r).Username, audit.ActionEmailVerify, target.Username, "marked by an administrator", s.clientIP(r))
+	http.Redirect(w, r, "/admin/users/"+target.ID+"?saved=1", http.StatusSeeOther)
+}
+
 func (s *Server) handleAdminUserSendVerification(w http.ResponseWriter, r *http.Request) {
 	target, ok := s.loadTargetUser(w, r)
 	if !ok {
