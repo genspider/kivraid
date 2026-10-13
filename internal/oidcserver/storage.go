@@ -413,8 +413,15 @@ func (s *Storage) CreateAccessAndRefreshTokens(ctx context.Context, req op.Token
 		if err := s.store.DeleteAccessTokensByRefreshToken(ctx, &oldID); err != nil {
 			return "", "", time.Time{}, err
 		}
-		if err := s.store.DeleteRefreshToken(ctx, oldID); err != nil {
+		// Claim the presented token by deleting it: of two exchanges racing
+		// with the same (possibly stolen) token, only the one that deleted
+		// it gets new tokens.
+		n, err := s.store.DeleteRefreshToken(ctx, oldID)
+		if err != nil {
 			return "", "", time.Time{}, err
+		}
+		if n == 0 {
+			return "", "", time.Time{}, op.ErrInvalidRefreshToken
 		}
 	}
 
@@ -482,7 +489,7 @@ func (s *Storage) TokenRequestByRefreshToken(ctx context.Context, refreshToken s
 		}
 		if !allowed {
 			_ = s.store.DeleteAccessTokensByRefreshToken(ctx, &row.ID)
-			_ = s.store.DeleteRefreshToken(ctx, row.ID)
+			_, _ = s.store.DeleteRefreshToken(ctx, row.ID)
 			return nil, op.ErrInvalidRefreshToken
 		}
 	}
@@ -542,7 +549,7 @@ func (s *Storage) RevokeToken(ctx context.Context, tokenOrTokenID string, userID
 	if err := s.store.DeleteAccessTokensByRefreshToken(ctx, &id); err != nil {
 		return oidc.ErrServerError().WithParent(err)
 	}
-	if err := s.store.DeleteRefreshToken(ctx, id); err != nil {
+	if _, err := s.store.DeleteRefreshToken(ctx, id); err != nil {
 		return oidc.ErrServerError().WithParent(err)
 	}
 	return nil

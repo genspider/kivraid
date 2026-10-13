@@ -45,7 +45,8 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 -- name: GetRefreshToken :one
 SELECT * FROM refresh_tokens WHERE id = $1;
 
--- name: DeleteRefreshToken :exec
+-- name: DeleteRefreshToken :execrows
+-- Zero rows means the token was already rotated or revoked.
 DELETE FROM refresh_tokens WHERE id = $1;
 
 -- name: DeleteRefreshTokensByUserClient :exec

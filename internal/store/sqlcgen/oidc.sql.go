@@ -210,13 +210,17 @@ func (q *Queries) DeleteOIDCSessionsByUser(ctx context.Context, userID string) e
 	return err
 }
 
-const deleteRefreshToken = `-- name: DeleteRefreshToken :exec
+const deleteRefreshToken = `-- name: DeleteRefreshToken :execrows
 DELETE FROM refresh_tokens WHERE id = $1
 `
 
-func (q *Queries) DeleteRefreshToken(ctx context.Context, id string) error {
-	_, err := q.db.ExecContext(ctx, deleteRefreshToken, id)
-	return err
+// Zero rows means the token was already rotated or revoked.
+func (q *Queries) DeleteRefreshToken(ctx context.Context, id string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteRefreshToken, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const deleteRefreshTokensByUserClient = `-- name: DeleteRefreshTokensByUserClient :exec
