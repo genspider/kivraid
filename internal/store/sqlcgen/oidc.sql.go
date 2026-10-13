@@ -56,8 +56,8 @@ func (q *Queries) CreateAuthRequest(ctx context.Context, arg CreateAuthRequestPa
 }
 
 const createRefreshToken = `-- name: CreateRefreshToken :exec
-INSERT INTO refresh_tokens (id, user_id, client_id, scopes, audience, amr, auth_time, expires_at, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO refresh_tokens (id, user_id, client_id, scopes, audience, amr, auth_time, expires_at, created_at, session_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type CreateRefreshTokenParams struct {
@@ -70,6 +70,7 @@ type CreateRefreshTokenParams struct {
 	AuthTime  time.Time
 	ExpiresAt time.Time
 	CreatedAt time.Time
+	SessionID string
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
@@ -83,6 +84,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 		arg.AuthTime,
 		arg.ExpiresAt,
 		arg.CreatedAt,
+		arg.SessionID,
 	)
 	return err
 }
@@ -178,6 +180,33 @@ DELETE FROM refresh_tokens WHERE expires_at < $1
 
 func (q *Queries) DeleteExpiredRefreshTokens(ctx context.Context, expiresAt time.Time) error {
 	_, err := q.db.ExecContext(ctx, deleteExpiredRefreshTokens, expiresAt)
+	return err
+}
+
+const deleteOIDCSessionsBefore = `-- name: DeleteOIDCSessionsBefore :exec
+DELETE FROM oidc_sessions WHERE created_at < $1
+`
+
+func (q *Queries) DeleteOIDCSessionsBefore(ctx context.Context, createdAt time.Time) error {
+	_, err := q.db.ExecContext(ctx, deleteOIDCSessionsBefore, createdAt)
+	return err
+}
+
+const deleteOIDCSessionsBySID = `-- name: DeleteOIDCSessionsBySID :exec
+DELETE FROM oidc_sessions WHERE sid = $1
+`
+
+func (q *Queries) DeleteOIDCSessionsBySID(ctx context.Context, sid string) error {
+	_, err := q.db.ExecContext(ctx, deleteOIDCSessionsBySID, sid)
+	return err
+}
+
+const deleteOIDCSessionsByUser = `-- name: DeleteOIDCSessionsByUser :exec
+DELETE FROM oidc_sessions WHERE user_id = $1
+`
+
+func (q *Queries) DeleteOIDCSessionsByUser(ctx context.Context, userID string) error {
+	_, err := q.db.ExecContext(ctx, deleteOIDCSessionsByUser, userID)
 	return err
 }
 
@@ -291,7 +320,7 @@ func (q *Queries) GetAuthRequestByID(ctx context.Context, id string) (AuthReques
 }
 
 const getRefreshToken = `-- name: GetRefreshToken :one
-SELECT id, user_id, client_id, scopes, audience, amr, auth_time, expires_at, created_at FROM refresh_tokens WHERE id = $1
+SELECT id, user_id, client_id, scopes, audience, amr, auth_time, expires_at, created_at, session_id FROM refresh_tokens WHERE id = $1
 `
 
 func (q *Queries) GetRefreshToken(ctx context.Context, id string) (RefreshToken, error) {
@@ -307,8 +336,118 @@ func (q *Queries) GetRefreshToken(ctx context.Context, id string) (RefreshToken,
 		&i.AuthTime,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		&i.SessionID,
 	)
 	return i, err
+}
+
+const listOIDCSessionsBySID = `-- name: ListOIDCSessionsBySID :many
+SELECT s.sid, s.client_id, s.user_id, p.backchannel_logout_uri
+FROM oidc_sessions s
+JOIN providers p ON p.client_id = s.client_id
+WHERE s.sid = $1
+`
+
+type ListOIDCSessionsBySIDRow struct {
+	Sid                  string
+	ClientID             string
+	UserID               string
+	BackchannelLogoutUri string
+}
+
+func (q *Queries) ListOIDCSessionsBySID(ctx context.Context, sid string) ([]ListOIDCSessionsBySIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, listOIDCSessionsBySID, sid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListOIDCSessionsBySIDRow
+	for rows.Next() {
+		var i ListOIDCSessionsBySIDRow
+		if err := rows.Scan(
+			&i.Sid,
+			&i.ClientID,
+			&i.UserID,
+			&i.BackchannelLogoutUri,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOIDCSessionsByUser = `-- name: ListOIDCSessionsByUser :many
+SELECT s.sid, s.client_id, s.user_id, p.backchannel_logout_uri
+FROM oidc_sessions s
+JOIN providers p ON p.client_id = s.client_id
+WHERE s.user_id = $1
+`
+
+type ListOIDCSessionsByUserRow struct {
+	Sid                  string
+	ClientID             string
+	UserID               string
+	BackchannelLogoutUri string
+}
+
+func (q *Queries) ListOIDCSessionsByUser(ctx context.Context, userID string) ([]ListOIDCSessionsByUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, listOIDCSessionsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListOIDCSessionsByUserRow
+	for rows.Next() {
+		var i ListOIDCSessionsByUserRow
+		if err := rows.Scan(
+			&i.Sid,
+			&i.ClientID,
+			&i.UserID,
+			&i.BackchannelLogoutUri,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const recordOIDCSession = `-- name: RecordOIDCSession :exec
+INSERT INTO oidc_sessions (sid, client_id, user_id, created_at)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (sid, client_id, user_id) DO UPDATE SET created_at = excluded.created_at
+`
+
+type RecordOIDCSessionParams struct {
+	Sid       string
+	ClientID  string
+	UserID    string
+	CreatedAt time.Time
+}
+
+// A repeat sign-in to the same application refreshes the timestamp, which
+// drives retention.
+func (q *Queries) RecordOIDCSession(ctx context.Context, arg RecordOIDCSessionParams) error {
+	_, err := q.db.ExecContext(ctx, recordOIDCSession,
+		arg.Sid,
+		arg.ClientID,
+		arg.UserID,
+		arg.CreatedAt,
+	)
+	return err
 }
 
 const retireSigningKeysExcept = `-- name: RetireSigningKeysExcept :execrows

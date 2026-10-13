@@ -42,6 +42,9 @@ type appForm struct {
 	LaunchURL      string
 	RedirectURIs   string
 	PostLogoutURIs string
+	// BackchannelURI receives logout tokens when a user's session ends
+	// (OpenID Connect Back-Channel Logout); empty when unsupported.
+	BackchannelURI string
 	ProxyHosts     string
 	Public         bool
 	// Token lifetimes as typed ("5m", "30d", or seconds), re-displayed
@@ -220,6 +223,7 @@ func parseAppForm(r *http.Request) appForm {
 		LaunchURL:      strings.TrimSpace(r.PostFormValue("launch_url")),
 		RedirectURIs:   r.PostFormValue("redirect_uris"),
 		PostLogoutURIs: r.PostFormValue("post_logout_uris"),
+		BackchannelURI: strings.TrimSpace(r.PostFormValue("backchannel_logout_uri")),
 		ProxyHosts:     r.PostFormValue("proxy_hosts"),
 		Public:         r.PostFormValue("client_type") == "public",
 		AccessTTL:      ttlField(r.PostFormValue("access_ttl"), 300),
@@ -288,6 +292,12 @@ func (f *appForm) validate() (redirects, postLogout []string, err error) {
 	postLogout, bad = parseURIList(f.PostLogoutURIs)
 	if bad != "" {
 		return nil, nil, errorf("Post-logout redirect URIs: %q is not an absolute URI", bad)
+	}
+	if f.BackchannelURI != "" {
+		u, perr := url.Parse(f.BackchannelURI)
+		if perr != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+			return nil, nil, errorf("The back-channel logout URI must be an absolute http or https URL.")
+		}
 	}
 	return redirects, postLogout, nil
 }
@@ -411,6 +421,7 @@ func (s *Server) handleAdminAppCreate(w http.ResponseWriter, r *http.Request) {
 		ID: uuid.NewString(), ApplicationID: app.ID, ClientID: clientID,
 		ClientSecretHash: secretHash, ClientSecretEnc: secretEnc,
 		RedirectUris: jsonList(redirects), PostLogoutRedirectUris: jsonList(postLogout),
+		BackchannelLogoutUri:  form.BackchannelURI,
 		Public:                form.Public,
 		AccessTokenTtlSeconds: 300, RefreshTokenTtlSeconds: 30 * 24 * 3600, IDTokenTtlSeconds: 3600,
 		CreatedAt: now, UpdatedAt: now,
@@ -475,6 +486,7 @@ func (s *Server) renderAppDetail(w http.ResponseWriter, r *http.Request, app sql
 		Name: app.Name, Slug: app.Slug, Kind: app.Kind, Description: app.Description, LaunchURL: app.LaunchUrl,
 		RedirectURIs:   strings.Join(decodeList(provider.RedirectUris), "\n"),
 		PostLogoutURIs: strings.Join(decodeList(provider.PostLogoutRedirectUris), "\n"),
+		BackchannelURI: provider.BackchannelLogoutUri,
 		Public:         provider.Public,
 		AccessTTL:      formatDurationSeconds(provider.AccessTokenTtlSeconds),
 		RefreshTTL:     formatDurationSeconds(provider.RefreshTokenTtlSeconds),
@@ -570,6 +582,7 @@ func (s *Server) handleAdminAppUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := s.store.UpdateProviderRedirects(r.Context(), sqlcgen.UpdateProviderRedirectsParams{
 		RedirectUris: jsonList(redirects), PostLogoutRedirectUris: jsonList(postLogout),
+		BackchannelLogoutUri:  form.BackchannelURI,
 		AccessTokenTtlSeconds: accessTTL, RefreshTokenTtlSeconds: refreshTTL,
 		IDTokenTtlSeconds: idTTL, UpdatedAt: now, ID: provider.ID,
 	}); err != nil {

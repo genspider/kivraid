@@ -27,3 +27,6 @@ UPDATE instance_settings SET key_rotation_days = $1, updated_at = $2 WHERE id = 
 
 -- name: SetAuditRetentionDays :exec
 UPDATE instance_settings SET audit_retention_days = $1, updated_at = $2 WHERE id = 1;
+
+-- name: SetPasswordPolicy :exec
+UPDATE instance_settings SET password_min_length = $1, password_breach_check = $2, updated_at = $3 WHERE id = 1;

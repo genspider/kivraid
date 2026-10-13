@@ -103,6 +103,24 @@ Proxmox) and a generic OIDC reference live in
 
 For apps without native OIDC support, use [forward auth](forward-auth.md).
 
+### Back-channel logout
+
+If the application supports [OpenID Connect Back-Channel
+Logout](https://openid.net/specs/openid-connect-backchannel-1_0.html), enter
+its endpoint as the application's **Back-channel logout URI**. Kivraid then
+posts a signed logout token to it whenever a session that signed in to the
+application ends: the user signs out (of Kivraid, or of another application
+through `end_session`), revokes the session from their sessions page, or an
+administrator signs them out everywhere, deactivates or deletes the
+account. The application can end its own session instead of waiting for it
+to expire. ID tokens carry a `sid` claim that the logout token repeats, so
+the application can tell the user's sessions apart.
+
+Delivery happens in the background, once, with a 10-second timeout; a
+failure is logged as a warning. A Kivraid session that simply expires
+sends nothing. Kivraid remembers which applications a session signed in to
+for 90 days.
+
 ## Two-factor requirements
 
 **Admin → Settings → Security** sets who must sign in with a second
@@ -116,6 +134,23 @@ password-only session is asked to sign in again.
 
 An application can also require two-factor on its own (its **Access**
 section); this applies to OIDC sign-ins and forward auth alike.
+
+## Password policy
+
+**Admin → Settings → Security** sets the minimum password length (8 to 16
+characters, 8 by default) and can reject passwords found in known data
+breaches. The policy applies to every password set through Kivraid — first
+run, sign-up by invitation, password change and reset, accounts created by
+an administrator or with `kivraid user` — for local and directory accounts
+alike (a directory may enforce stricter rules of its own). Existing
+passwords stay valid until they are changed.
+
+The breach check uses the [Have I Been
+Pwned](https://haveibeenpwned.com/API/v3#PwnedPasswords) range API: only the
+first five characters of the password's SHA-1 hash leave the server, and
+responses are padded. It needs outbound HTTPS; when the service cannot be
+reached, the password is accepted and a warning is logged, so an outage
+never blocks password changes.
 
 ## Sign-in alerts
 

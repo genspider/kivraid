@@ -89,6 +89,8 @@ type InstanceSetting struct {
 	NewDeviceAlerts     bool
 	KeyRotationDays     int32
 	AuditRetentionDays  int32
+	PasswordMinLength   int32
+	PasswordBreachCheck bool
 }
 
 type LdapSource struct {
@@ -132,6 +134,13 @@ type MfaRecoveryCode struct {
 	CreatedAt time.Time
 }
 
+type OidcSession struct {
+	Sid       string
+	ClientID  string
+	UserID    string
+	CreatedAt time.Time
+}
+
 type Provider struct {
 	ID                     string
 	ApplicationID          string
@@ -146,6 +155,7 @@ type Provider struct {
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
 	ClientSecretEnc        []byte
+	BackchannelLogoutUri   string
 }
 
 type RefreshToken struct {
@@ -158,6 +168,7 @@ type RefreshToken struct {
 	AuthTime  time.Time
 	ExpiresAt time.Time
 	CreatedAt time.Time
+	SessionID string
 }
 
 type Session struct {

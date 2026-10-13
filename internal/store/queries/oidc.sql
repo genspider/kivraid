@@ -39,8 +39,8 @@ DELETE FROM access_tokens WHERE user_id = $1 AND client_id = $2;
 DELETE FROM access_tokens WHERE expires_at < $1;
 
 -- name: CreateRefreshToken :exec
-INSERT INTO refresh_tokens (id, user_id, client_id, scopes, audience, amr, auth_time, expires_at, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+INSERT INTO refresh_tokens (id, user_id, client_id, scopes, audience, amr, auth_time, expires_at, created_at, session_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 
 -- name: GetRefreshToken :one
 SELECT * FROM refresh_tokens WHERE id = $1;
@@ -64,3 +64,31 @@ SELECT * FROM signing_keys WHERE active = TRUE ORDER BY created_at DESC;
 -- name: RetireSigningKeysExcept :execrows
 -- Unpublishes every active key but the signer.
 UPDATE signing_keys SET active = FALSE WHERE active = TRUE AND id != $1;
+
+-- name: RecordOIDCSession :exec
+-- A repeat sign-in to the same application refreshes the timestamp, which
+-- drives retention.
+INSERT INTO oidc_sessions (sid, client_id, user_id, created_at)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (sid, client_id, user_id) DO UPDATE SET created_at = excluded.created_at;
+
+-- name: ListOIDCSessionsBySID :many
+SELECT s.sid, s.client_id, s.user_id, p.backchannel_logout_uri
+FROM oidc_sessions s
+JOIN providers p ON p.client_id = s.client_id
+WHERE s.sid = $1;
+
+-- name: ListOIDCSessionsByUser :many
+SELECT s.sid, s.client_id, s.user_id, p.backchannel_logout_uri
+FROM oidc_sessions s
+JOIN providers p ON p.client_id = s.client_id
+WHERE s.user_id = $1;
+
+-- name: DeleteOIDCSessionsBySID :exec
+DELETE FROM oidc_sessions WHERE sid = $1;
+
+-- name: DeleteOIDCSessionsByUser :exec
+DELETE FROM oidc_sessions WHERE user_id = $1;
+
+-- name: DeleteOIDCSessionsBefore :exec
+DELETE FROM oidc_sessions WHERE created_at < $1;

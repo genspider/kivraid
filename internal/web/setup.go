@@ -63,8 +63,8 @@ func (s *Server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 	if data.Name == "" {
 		data.Name = data.Username
 	}
-	if len(password) < 8 {
-		fail(s.t(r, "The password must be at least 8 characters."))
+	if msg := s.passwordProblem(r, password); msg != "" {
+		fail(msg)
 		return
 	}
 	if password != confirm {

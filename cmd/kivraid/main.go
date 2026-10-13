@@ -2,6 +2,10 @@
 //
 //	kivraid serve    --config kivraid.yaml
 //	kivraid user add --config kivraid.yaml --username admin --email a@b.c [--name "..."] [--admin]
+//
+// The other "user" subcommands (list, reset-password, reset-mfa, promote)
+// recover access to an instance from the host, for example when the only
+// administrator has lost their second factor.
 package main
 
 import (
@@ -35,9 +39,7 @@ import (
 	"github.com/kivraid/kivraid/internal/secrets"
 	"github.com/kivraid/kivraid/internal/session"
 	"github.com/kivraid/kivraid/internal/sources/ldap"
-	"github.com/kivraid/kivraid/internal/sources/local"
 	"github.com/kivraid/kivraid/internal/store"
-	"github.com/kivraid/kivraid/internal/store/sqlcgen"
 	"github.com/kivraid/kivraid/internal/web"
 	"github.com/kivraid/kivraid/internal/webauthn"
 )
@@ -55,11 +57,12 @@ func main() {
 	case "serve":
 		err = serve(os.Args[2:])
 	case "user":
-		if len(os.Args) < 3 || os.Args[2] != "add" {
+		cmd, ok := userCommands[subcommand()]
+		if !ok {
 			usage()
 			os.Exit(2)
 		}
-		err = userAdd(os.Args[3:])
+		err = cmd(os.Args[3:])
 	case "config":
 		if len(os.Args) < 3 || os.Args[2] != "init" {
 			usage()
@@ -83,6 +86,15 @@ func main() {
 	}
 }
 
+// subcommand returns the word after the command ("add" in "user add"), or
+// "" when there is none.
+func subcommand() string {
+	if len(os.Args) < 3 {
+		return ""
+	}
+	return os.Args[2]
+}
+
 func usage() {
 	fmt.Fprint(os.Stderr, `Kivraid — lightweight identity provider
 
@@ -91,6 +103,13 @@ Usage:
   kivraid serve       [--config kivraid.yaml]   run the server
   kivraid user add    [--config kivraid.yaml] --username U --email E
                       [--name N] [--admin] [--password P]
+  kivraid user list   [--config kivraid.yaml]
+  kivraid user reset-password [--config kivraid.yaml] --user U
+                      [--password P] [--must-change]
+  kivraid user reset-mfa      [--config kivraid.yaml] --user U
+  kivraid user promote        [--config kivraid.yaml] --user U
+
+  --user takes a username or an email address.
   kivraid healthcheck [--url http://127.0.0.1:9000/healthz]
   kivraid version
 `)
@@ -261,63 +280,6 @@ func serve(args []string) error {
 		defer cancel()
 		return httpSrv.Shutdown(shutdownCtx)
 	}
-}
-
-func userAdd(args []string) error {
-	fs := flag.NewFlagSet("user add", flag.ExitOnError)
-	cfgPath := fs.String("config", "kivraid.yaml", "path to the configuration file")
-	username := fs.String("username", "", "login name (required)")
-	email := fs.String("email", "", "email address (required)")
-	name := fs.String("name", "", "display name")
-	admin := fs.Bool("admin", false, "grant administrator rights")
-	password := fs.String("password", "", "password (omit to be prompted; prefer the prompt)")
-	fs.Parse(args)
-
-	if *username == "" || *email == "" {
-		return errors.New("--username and --email are required")
-	}
-	if *name == "" {
-		*name = *username
-	}
-
-	// Load the config before prompting: a missing file should fail fast,
-	// not after the password has been typed twice.
-	cfg, err := config.Load(*cfgPath)
-	if err != nil {
-		return err
-	}
-
-	pw := *password
-	if pw == "" {
-		pw, err = promptPassword()
-		if err != nil {
-			return err
-		}
-	}
-	if len(pw) < 8 {
-		return errors.New("password must be at least 8 characters")
-	}
-	ctx := context.Background()
-	st, err := store.Open(ctx, cfg.Database.Driver, cfg.Database.DSN)
-	if err != nil {
-		return err
-	}
-	defer st.Close()
-
-	user, err := local.NewSource(st).CreateUser(ctx, *username, *email, *name, pw, *admin)
-	if err != nil {
-		return err
-	}
-	// An operator-created account has an operator-attested email.
-	if err := st.SetEmailVerified(ctx, sqlcgen.SetEmailVerifiedParams{
-		EmailVerified: true, UpdatedAt: time.Now().UTC(), ID: user.ID,
-	}); err != nil {
-		return err
-	}
-	audit.NewRecorder(st, newLogger(cfg.LogLevel)).
-		Record(ctx, "cli", audit.ActionUserCreate, user.Username, "", "")
-	fmt.Printf("created user %s (%s)\n", user.Username, user.ID)
-	return nil
 }
 
 // healthcheck probes the local /healthz endpoint and exits non-zero when

@@ -25,6 +25,9 @@ type authRequest struct {
 	UserID   string    `json:"user_id,omitempty"`
 	AuthTime time.Time `json:"auth_time,omitzero"`
 	IsDone   bool      `json:"done"`
+	// SessionID is the Kivraid session (sid) the user signed in with; it
+	// is the sid claim of the ID token and of back-channel logout tokens.
+	SessionID string `json:"sid,omitempty"`
 }
 
 func newAuthRequest(id string, r *oidc.AuthRequest, now time.Time) *authRequest {
@@ -54,6 +57,7 @@ func (a *authRequest) GetScopes() []string    { return a.Scopes }
 func (a *authRequest) GetState() string       { return a.State }
 func (a *authRequest) GetSubject() string     { return a.UserID }
 func (a *authRequest) Done() bool             { return a.IsDone }
+func (a *authRequest) sessionID() string      { return a.SessionID }
 
 func (a *authRequest) GetAMR() []string {
 	if a.IsDone {

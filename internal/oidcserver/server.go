@@ -61,11 +61,15 @@ func New(ctx context.Context, cfg config.Config, st *store.Store, log *slog.Logg
 		AuthMethodPost:           true,
 		GrantTypeRefreshToken:    true,
 		DefaultLogoutRedirectURI: "/login",
+		// Logout tokens are sent by the web layer (see BackchannelLogout),
+		// with a sid that the ID tokens carry too.
+		BackChannelLogoutSupported:        true,
+		BackChannelLogoutSessionSupported: true,
 		SupportedScopes: []string{
 			"openid", "profile", "email", "offline_access", ScopeGroups,
 		},
 		SupportedClaims: []string{
-			"sub", "aud", "exp", "iat", "iss", "auth_time", "nonce", "acr", "amr",
+			"sub", "aud", "exp", "iat", "iss", "auth_time", "nonce", "acr", "amr", "sid",
 			"name", "preferred_username", "picture", "email", "email_verified", "updated_at",
 			ScopeGroups,
 		},

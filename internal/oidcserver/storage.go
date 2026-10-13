@@ -244,9 +244,11 @@ func (s *Storage) ClientIDForAuthRequest(ctx context.Context, id string) (string
 	return req.ClientID, nil
 }
 
-// CompleteAuthRequest binds the authenticated user to a pending
-// authorization request. Called by the web layer after login.
-func (s *Storage) CompleteAuthRequest(ctx context.Context, id, userID string) error {
+// CompleteAuthRequest binds the authenticated user and their Kivraid
+// session (sid) to a pending authorization request, and records that the
+// session signed in to the client for back-channel logout. Called by the
+// web layer after login.
+func (s *Storage) CompleteAuthRequest(ctx context.Context, id, userID, sid string) error {
 	row, err := s.store.GetAuthRequestByID(ctx, id)
 	if err != nil {
 		return notFound(err)
@@ -255,14 +257,33 @@ func (s *Storage) CompleteAuthRequest(ctx context.Context, id, userID string) er
 	if err != nil {
 		return err
 	}
+	now := time.Now().UTC()
 	req.UserID = userID
-	req.AuthTime = time.Now().UTC()
+	req.AuthTime = now
 	req.IsDone = true
+	req.SessionID = sid
 	raw, err := json.Marshal(req)
 	if err != nil {
 		return err
 	}
-	return s.store.UpdateAuthRequest(ctx, sqlcgen.UpdateAuthRequestParams{Request: string(raw), ID: id})
+	if err := s.store.UpdateAuthRequest(ctx, sqlcgen.UpdateAuthRequestParams{Request: string(raw), ID: id}); err != nil {
+		return err
+	}
+	if sid == "" {
+		return nil
+	}
+	return s.store.RecordOIDCSession(ctx, sqlcgen.RecordOIDCSessionParams{
+		Sid: sid, ClientID: req.ClientID, UserID: userID, CreatedAt: now,
+	})
+}
+
+// sessionIDOf returns the Kivraid session a token request belongs to, or
+// "" for tokens issued before sessions were tracked.
+func sessionIDOf(req any) string {
+	if r, ok := req.(interface{ sessionID() string }); ok {
+		return r.sessionID()
+	}
+	return ""
 }
 
 // --- Tokens --------------------------------------------------------------
@@ -367,6 +388,7 @@ func (s *Storage) CreateAccessAndRefreshTokens(ctx context.Context, req op.Token
 		AuthTime:  authTime,
 		ExpiresAt: now.Add(time.Duration(provider.RefreshTokenTtlSeconds) * time.Second),
 		CreatedAt: now,
+		SessionID: sessionIDOf(req),
 	}); err != nil {
 		return "", "", time.Time{}, err
 	}
@@ -391,6 +413,7 @@ func (r *refreshTokenRequest) GetClientID() string         { return r.row.Client
 func (r *refreshTokenRequest) GetScopes() []string         { return r.scopes }
 func (r *refreshTokenRequest) GetSubject() string          { return r.row.UserID }
 func (r *refreshTokenRequest) SetCurrentScopes(s []string) { r.scopes = s }
+func (r *refreshTokenRequest) sessionID() string           { return r.row.SessionID }
 
 func (s *Storage) TokenRequestByRefreshToken(ctx context.Context, refreshToken string) (op.RefreshTokenRequest, error) {
 	row, err := s.store.GetRefreshToken(ctx, HashToken(refreshToken))
@@ -574,8 +597,16 @@ func (s *Storage) SetUserinfoFromScopes(ctx context.Context, ui *oidc.UserInfo, 
 	return nil
 }
 
+// SetUserinfoFromRequest fills the ID token claims. It also adds the sid
+// claim, which relying parties match against back-channel logout tokens.
 func (s *Storage) SetUserinfoFromRequest(ctx context.Context, ui *oidc.UserInfo, req op.IDTokenRequest, scopes []string) error {
-	return s.setUserinfo(ctx, ui, req.GetSubject(), scopes)
+	if err := s.setUserinfo(ctx, ui, req.GetSubject(), scopes); err != nil {
+		return err
+	}
+	if sid := sessionIDOf(req); sid != "" {
+		ui.AppendClaims("sid", sid)
+	}
+	return nil
 }
 
 func (s *Storage) SetUserinfoFromToken(ctx context.Context, ui *oidc.UserInfo, tokenID, subject, origin string) error {
@@ -650,6 +681,9 @@ func (s *Storage) CleanupExpired(ctx context.Context) error {
 		return err
 	}
 	if err := s.store.DeleteExpiredRefreshTokens(ctx, now); err != nil {
+		return err
+	}
+	if err := s.store.DeleteOIDCSessionsBefore(ctx, now.Add(-oidcSessionRetention)); err != nil {
 		return err
 	}
 	return s.store.DeleteExpiredAuthRequests(ctx, now.Add(-authRequestTTL))

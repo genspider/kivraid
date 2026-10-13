@@ -244,6 +244,7 @@ func (s *Server) completeLogin(w http.ResponseWriter, r *http.Request, user sqlc
 	s.sessions.Put(r.Context(), session.KeyUserAgent, r.UserAgent())
 	s.sessions.Put(r.Context(), session.KeyLoginAt, time.Now().Unix())
 	s.sessions.Put(r.Context(), session.KeyLoginMethod, method)
+	s.sessions.Put(r.Context(), session.KeySID, randomHex(16))
 	// Alert the user about a browser that never signed in as them, unless
 	// this is the account's very first sign-in.
 	if s.newDeviceAlerts.Load() && user.LastLoginAt.Valid && user.Email != "" && !s.knownDevice(r, user.ID) {
@@ -334,8 +335,10 @@ func (s *Server) handleMFAChallengeSubmit(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
-	// Resolve the upstream logout target before the session is destroyed.
+	// Resolve the upstream logout target and the applications to notify
+	// before the session is destroyed.
 	upstreamURL := s.upstreamLogoutURL(r.Context())
+	sids := s.sessionSIDs(r.Context())
 	if userID := s.sessions.GetString(r.Context(), session.KeyUserID); userID != "" {
 		if user, err := s.store.GetUserByID(r.Context(), userID); err == nil {
 			s.audit.Record(r.Context(), user.Username, audit.ActionLogout, "", "", s.clientIP(r))
@@ -345,6 +348,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
+	s.logoutSessionApps(r.Context(), sids...)
 	if upstreamURL != "" {
 		// RP-initiated logout: sign the user out at the upstream too. It
 		// redirects back to our login via post_logout_redirect_uri.
@@ -385,10 +389,14 @@ func (s *Server) handleEndSession(w http.ResponseWriter, r *http.Request) {
 		if user, err := s.store.GetUserByID(r.Context(), userID); err == nil {
 			s.audit.Record(r.Context(), user.Username, audit.ActionLogout, "", "rp-initiated", s.clientIP(r))
 		}
+		sids := s.sessionSIDs(r.Context())
 		if err := s.sessions.Destroy(r.Context()); err != nil {
 			s.serverError(w, r, err)
 			return
 		}
+		// Every application of the session is told, the initiating one
+		// included: it may have other tabs or devices to sign out.
+		s.logoutSessionApps(r.Context(), sids...)
 	}
 	// The Kivraid session is now gone regardless. If the RP asked to be
 	// returned to a post_logout_redirect_uri not registered for it, op would
@@ -511,7 +519,7 @@ func (s *Server) handleOIDCResume(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.oidcStore.CompleteAuthRequest(r.Context(), id, user.ID); err != nil {
+	if err := s.oidcStore.CompleteAuthRequest(r.Context(), id, user.ID, s.sessionSID(r.Context())); err != nil {
 		s.log.Warn("resume authorization request", "id", id, "err", err)
 		http.Error(w, "authorization request not found or expired", http.StatusBadRequest)
 		return

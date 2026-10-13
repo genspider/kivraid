@@ -27,7 +27,7 @@ import (
 )
 
 // newServerForStore wires a full web server around an existing store.
-func newServerForStore(t *testing.T, st *store.Store, forwardAuthDomains []string) *httptest.Server {
+func newServerForStore(t *testing.T, st *store.Store, forwardAuthDomains []string, opts ...func(*Deps)) *httptest.Server {
 	t.Helper()
 	cfg := config.Config{
 		BaseURL:     "http://localhost",
@@ -44,7 +44,7 @@ func newServerForStore(t *testing.T, st *store.Store, forwardAuthDomains []strin
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv, err := NewServer(Deps{
+	deps := Deps{
 		Config: cfg, Store: st, Sessions: session.NewManager(st.DB, st.Driver, false,
 			time.Duration(cfg.Session.Lifetime), time.Duration(cfg.Session.IdleTimeout)),
 		OIDC: oidcProvider, OIDCStore: oidcStorage,
@@ -53,7 +53,11 @@ func newServerForStore(t *testing.T, st *store.Store, forwardAuthDomains []strin
 		WebAuthn: waManager,
 		Mailer:   mailer.New(st, secrets.DeriveKey(cfg.SecretKey, "smtp-password"), log),
 		Log:      log,
-	})
+	}
+	for _, opt := range opts {
+		opt(&deps)
+	}
+	srv, err := NewServer(deps)
 	if err != nil {
 		t.Fatal(err)
 	}

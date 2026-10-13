@@ -73,8 +73,9 @@ Kivraid's `groups` claim has no direct mapping to Immich roles.
 
 - **Single logout:** set Immich's **End Session Endpoint** to
   `https://sso.example.com/end_session` to end the Kivraid session when a
-  user logs out of Immich. If Kivraid sends back-channel logout, point
-  it at `https://immich.example.com/api/oauth/backchannel-logout`.
+  user logs out of Immich. To sign users out of Immich when their Kivraid
+  session ends, set the application's **Back-channel logout URI** in
+  Kivraid to `https://immich.example.com/api/oauth/backchannel-logout`.
 - **Mobile custom-scheme workaround:** if `app.immich:///oauth-callback`
   cannot be registered in Kivraid, host an HTTPS endpoint that forwards
   to it and set Immich's **Mobile Redirect URI Override** to

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kivraid/kivraid/internal/audit"
+	"github.com/kivraid/kivraid/internal/pwpolicy"
 	"github.com/kivraid/kivraid/internal/session"
 	"github.com/kivraid/kivraid/internal/store/sqlcgen"
 )
@@ -46,7 +47,7 @@ var mfaSetupPaths = []string{
 }
 
 // loadSecuritySettings refreshes the cached security settings (two-factor
-// policy, new-device alerts) from the database.
+// policy, new-device alerts, password policy) from the database.
 func (s *Server) loadSecuritySettings(ctx context.Context) {
 	row, err := s.store.GetInstanceSettings(ctx)
 	if err != nil {
@@ -61,6 +62,9 @@ func (s *Server) loadSecuritySettings(ctx context.Context) {
 	}
 	s.mfaPolicy.Store(policy)
 	s.newDeviceAlerts.Store(row.NewDeviceAlerts)
+	s.passwordPolicy.Store(pwpolicy.Policy{
+		MinLength: int(row.PasswordMinLength), CheckBreached: row.PasswordBreachCheck,
+	})
 }
 
 func (s *Server) currentMFAPolicy() string {
@@ -152,6 +156,9 @@ type adminSecurityData struct {
 	RetentionDays    int32
 	RetentionChoices []int32
 	NewDeviceAlerts  bool
+	PasswordMinLen   int32
+	PasswordChoices  []int32
+	BreachCheck      bool
 	CanEmail         bool
 	Saved            bool
 	Error            string
@@ -169,6 +176,7 @@ func (s *Server) renderSecurity(w http.ResponseWriter, r *http.Request, errMsg s
 			MFAPolicy: s.currentMFAPolicy(), NewDeviceAlerts: s.newDeviceAlerts.Load(),
 			RotationDays: settings.KeyRotationDays, RotationChoices: keyRotationChoices,
 			RetentionDays: settings.AuditRetentionDays, RetentionChoices: auditRetentionChoices,
+			PasswordMinLen: settings.PasswordMinLength, PasswordChoices: pwpolicy.MinLengthChoices, BreachCheck: settings.PasswordBreachCheck,
 			CanEmail: s.smtpEnabled.Load(), Saved: r.URL.Query().Get("saved") == "1", Error: errMsg,
 		},
 	})
@@ -203,6 +211,17 @@ func (s *Server) handleAdminSecuritySave(w http.ResponseWriter, r *http.Request)
 		s.renderSecurity(w, r, s.t(r, "Choose how long to keep the activity log."))
 		return
 	}
+	minLen64, merr := strconv.ParseInt(r.PostFormValue("password_min_length"), 10, 32)
+	minLen := int32(minLen64)
+	if merr != nil {
+		minLen = pwpolicy.DefaultMinLength // field absent (older form): keep the default
+	}
+	if !slices.Contains(pwpolicy.MinLengthChoices, minLen) {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		s.renderSecurity(w, r, s.t(r, "Choose a minimum password length."))
+		return
+	}
+	breachCheck := r.PostFormValue("password_breach_check") == "on"
 	now := time.Now().UTC()
 	if err := s.store.SetMFAPolicy(r.Context(), sqlcgen.SetMFAPolicyParams{MfaPolicy: policy, UpdatedAt: now}); err != nil {
 		s.serverError(w, r, err)
@@ -220,9 +239,16 @@ func (s *Server) handleAdminSecuritySave(w http.ResponseWriter, r *http.Request)
 		s.serverError(w, r, err)
 		return
 	}
+	if err := s.store.SetPasswordPolicy(r.Context(), sqlcgen.SetPasswordPolicyParams{
+		PasswordMinLength: minLen, PasswordBreachCheck: breachCheck, UpdatedAt: now,
+	}); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
 	s.loadSecuritySettings(r.Context())
 	s.audit.Record(r.Context(), currentUser(r).Username, audit.ActionSecurityUpdate, "",
 		"mfa_policy="+policy+" new_device_alerts="+strconv.FormatBool(alerts)+
-			" key_rotation_days="+strconv.Itoa(int(days))+" audit_retention_days="+strconv.Itoa(int(retention)), s.clientIP(r))
+			" key_rotation_days="+strconv.Itoa(int(days))+" audit_retention_days="+strconv.Itoa(int(retention))+
+			" password_min_length="+strconv.Itoa(int(minLen))+" password_breach_check="+strconv.FormatBool(breachCheck), s.clientIP(r))
 	http.Redirect(w, r, "/admin/settings/security?saved=1", http.StatusSeeOther)
 }

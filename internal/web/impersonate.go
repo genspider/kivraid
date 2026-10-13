@@ -38,6 +38,10 @@ func (s *Server) handleAdminUserImpersonate(w http.ResponseWriter, r *http.Reque
 		s.serverError(w, r, err)
 		return
 	}
+	// The impersonation gets a sid of its own, so ending it signs the
+	// applications opened as the user out without touching the admin's.
+	s.sessions.Put(r.Context(), session.KeyImpersonatorSID, s.sessionSID(r.Context()))
+	s.sessions.Put(r.Context(), session.KeySID, randomHex(16))
 	s.sessions.Put(r.Context(), session.KeyImpersonator, actor.ID)
 	s.sessions.Put(r.Context(), session.KeyImpersonatorName, actor.Username)
 	s.sessions.Put(r.Context(), session.KeyUserID, target.ID)
@@ -62,6 +66,8 @@ func (s *Server) handleImpersonateStop(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
+	s.logoutSessionApps(r.Context(), s.sessions.GetString(r.Context(), session.KeySID))
+	s.sessions.Put(r.Context(), session.KeySID, s.sessions.PopString(r.Context(), session.KeyImpersonatorSID))
 	s.sessions.Put(r.Context(), session.KeyUserID, adminID)
 	s.sessions.Remove(r.Context(), session.KeyImpersonator)
 	s.sessions.Remove(r.Context(), session.KeyImpersonatorName)

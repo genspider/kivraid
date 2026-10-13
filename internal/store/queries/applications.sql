@@ -6,8 +6,9 @@ RETURNING *;
 -- name: CreateProvider :one
 INSERT INTO providers (id, application_id, client_id, client_secret_hash, client_secret_enc,
                        redirect_uris, post_logout_redirect_uris, public, access_token_ttl_seconds,
-                       refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                       refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at,
+                       backchannel_logout_uri)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 RETURNING *;
 
 -- name: GetApplication :one
@@ -43,8 +44,8 @@ SELECT icon, icon_mime FROM applications WHERE id = $1;
 UPDATE providers
 SET redirect_uris = $1, post_logout_redirect_uris = $2,
     access_token_ttl_seconds = $3, refresh_token_ttl_seconds = $4, id_token_ttl_seconds = $5,
-    updated_at = $6
-WHERE id = $7;
+    updated_at = $6, backchannel_logout_uri = $7
+WHERE id = $8;
 
 -- name: UpdateProviderSecret :exec
 UPDATE providers SET client_secret_hash = $1, client_secret_enc = $2, updated_at = $3 WHERE id = $4;

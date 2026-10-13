@@ -329,7 +329,7 @@ func init() {
 		"Open %s": "Ouvrir %s",
 
 		// Settings → Security.
-		"Sign-in requirements and alerts, token signing keys, and how long activity is kept.": "Exigences et alertes de connexion, clés de signature des jetons et durée de conservation de l'activité.",
+		"Sign-in requirements and alerts, password rules, token signing keys, and how long activity is kept.": "Exigences et alertes de connexion, règles de mot de passe, clés de signature des jetons et durée de conservation de l'activité.",
 		"Security settings saved.":  "Paramètres de sécurité enregistrés.",
 		"Two-factor authentication": "Double authentification",
 		"Who must sign in with a second factor: an authenticator code, a passkey, or an upstream identity provider (which owns authentication for federated users). Anyone required but not enrolled is asked to set it up before going further, and cannot turn it off.": "Qui doit se connecter avec un second facteur : un code d'authentification, une clé d'accès ou un fournisseur d'identité (qui gère l'authentification des utilisateurs fédérés). Toute personne concernée mais pas encore équipée doit l'activer avant d'aller plus loin, et ne peut pas la désactiver.",
@@ -344,6 +344,12 @@ func init() {
 		"Email users when their account signs in from a new device": "Prévenir les utilisateurs par e-mail quand leur compte se connecte depuis un nouvel appareil",
 		"A device is new when that browser has never signed in as the user. Right after turning this on, each user's next sign-in on every browser counts as new. An account's very first sign-in never sends an alert.": "Un appareil est nouveau quand ce navigateur ne s'est jamais connecté en tant que cet utilisateur. Juste après l'activation, la prochaine connexion de chaque utilisateur sur chaque navigateur compte comme nouvelle. La toute première connexion d'un compte n'envoie jamais d'alerte.",
 		"Email delivery is not configured: no alert will be sent until it is (Settings → Email).":                                                                                                                        "L'envoi d'e-mails n'est pas configuré : aucune alerte ne sera envoyée tant qu'il ne l'est pas (Paramètres → E-mail).",
+		"Applies to every new password set through Kivraid, for local and directory accounts. Existing passwords stay valid until they are changed.":                                                                     "S'applique à tout nouveau mot de passe défini via Kivraid, pour les comptes locaux comme pour ceux des annuaires. Les mots de passe existants restent valides jusqu'à leur prochaine modification.",
+		"Minimum length": "Longueur minimale",
+		"%d character":   "%d caractère",
+		"%d characters":  "%d caractères",
+		"Reject passwords found in known data breaches": "Refuser les mots de passe présents dans des fuites de données connues",
+		"Checked against Have I Been Pwned: only the first 5 characters of the password's SHA-1 hash are sent, never the password. Needs outbound HTTPS; if the service cannot be reached, the password is accepted.": "Vérifié auprès de Have I Been Pwned : seuls les 5 premiers caractères de l'empreinte SHA-1 du mot de passe sont envoyés, jamais le mot de passe. Nécessite un accès HTTPS sortant ; si le service est injoignable, le mot de passe est accepté.",
 		"Token signing key": "Clé de signature des jetons",
 		"How often to replace the key that signs ID and access tokens. Previous keys stay published for 7 days, then are retired. You can also rotate now from Settings → System.": "À quelle fréquence remplacer la clé qui signe les jetons d'identité et d'accès. Les clés précédentes restent publiées 7 jours, puis sont retirées. Vous pouvez aussi la renouveler dès maintenant depuis Paramètres → Système.",
 		"Automatic key rotation": "Renouvellement automatique de la clé",
@@ -357,5 +363,6 @@ func init() {
 		"Choose who must use two-factor authentication.": "Choisissez qui doit utiliser la double authentification.",
 		"Choose a key rotation period.":                  "Choisissez une période de renouvellement de la clé.",
 		"Choose how long to keep the activity log.":      "Choisissez la durée de conservation du journal d'activité.",
+		"Choose a minimum password length.":              "Choisissez une longueur minimale de mot de passe.",
 	})
 }

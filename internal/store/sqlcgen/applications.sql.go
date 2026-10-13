@@ -63,9 +63,10 @@ func (q *Queries) CreateApplication(ctx context.Context, arg CreateApplicationPa
 const createProvider = `-- name: CreateProvider :one
 INSERT INTO providers (id, application_id, client_id, client_secret_hash, client_secret_enc,
                        redirect_uris, post_logout_redirect_uris, public, access_token_ttl_seconds,
-                       refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, application_id, client_id, client_secret_hash, redirect_uris, post_logout_redirect_uris, public, access_token_ttl_seconds, refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at, client_secret_enc
+                       refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at,
+                       backchannel_logout_uri)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+RETURNING id, application_id, client_id, client_secret_hash, redirect_uris, post_logout_redirect_uris, public, access_token_ttl_seconds, refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at, client_secret_enc, backchannel_logout_uri
 `
 
 type CreateProviderParams struct {
@@ -82,6 +83,7 @@ type CreateProviderParams struct {
 	IDTokenTtlSeconds      int64
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
+	BackchannelLogoutUri   string
 }
 
 func (q *Queries) CreateProvider(ctx context.Context, arg CreateProviderParams) (Provider, error) {
@@ -99,6 +101,7 @@ func (q *Queries) CreateProvider(ctx context.Context, arg CreateProviderParams) 
 		arg.IDTokenTtlSeconds,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.BackchannelLogoutUri,
 	)
 	var i Provider
 	err := row.Scan(
@@ -115,6 +118,7 @@ func (q *Queries) CreateProvider(ctx context.Context, arg CreateProviderParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ClientSecretEnc,
+		&i.BackchannelLogoutUri,
 	)
 	return i, err
 }
@@ -170,7 +174,7 @@ func (q *Queries) GetApplicationIcon(ctx context.Context, id string) (GetApplica
 }
 
 const getProviderByApplication = `-- name: GetProviderByApplication :one
-SELECT id, application_id, client_id, client_secret_hash, redirect_uris, post_logout_redirect_uris, public, access_token_ttl_seconds, refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at, client_secret_enc FROM providers WHERE application_id = $1
+SELECT id, application_id, client_id, client_secret_hash, redirect_uris, post_logout_redirect_uris, public, access_token_ttl_seconds, refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at, client_secret_enc, backchannel_logout_uri FROM providers WHERE application_id = $1
 `
 
 func (q *Queries) GetProviderByApplication(ctx context.Context, applicationID string) (Provider, error) {
@@ -190,12 +194,13 @@ func (q *Queries) GetProviderByApplication(ctx context.Context, applicationID st
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ClientSecretEnc,
+		&i.BackchannelLogoutUri,
 	)
 	return i, err
 }
 
 const getProviderByClientID = `-- name: GetProviderByClientID :one
-SELECT id, application_id, client_id, client_secret_hash, redirect_uris, post_logout_redirect_uris, public, access_token_ttl_seconds, refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at, client_secret_enc FROM providers WHERE client_id = $1
+SELECT id, application_id, client_id, client_secret_hash, redirect_uris, post_logout_redirect_uris, public, access_token_ttl_seconds, refresh_token_ttl_seconds, id_token_ttl_seconds, created_at, updated_at, client_secret_enc, backchannel_logout_uri FROM providers WHERE client_id = $1
 `
 
 func (q *Queries) GetProviderByClientID(ctx context.Context, clientID string) (Provider, error) {
@@ -215,6 +220,7 @@ func (q *Queries) GetProviderByClientID(ctx context.Context, clientID string) (P
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ClientSecretEnc,
+		&i.BackchannelLogoutUri,
 	)
 	return i, err
 }
@@ -368,8 +374,8 @@ const updateProviderRedirects = `-- name: UpdateProviderRedirects :exec
 UPDATE providers
 SET redirect_uris = $1, post_logout_redirect_uris = $2,
     access_token_ttl_seconds = $3, refresh_token_ttl_seconds = $4, id_token_ttl_seconds = $5,
-    updated_at = $6
-WHERE id = $7
+    updated_at = $6, backchannel_logout_uri = $7
+WHERE id = $8
 `
 
 type UpdateProviderRedirectsParams struct {
@@ -379,6 +385,7 @@ type UpdateProviderRedirectsParams struct {
 	RefreshTokenTtlSeconds int64
 	IDTokenTtlSeconds      int64
 	UpdatedAt              time.Time
+	BackchannelLogoutUri   string
 	ID                     string
 }
 
@@ -390,6 +397,7 @@ func (q *Queries) UpdateProviderRedirects(ctx context.Context, arg UpdateProvide
 		arg.RefreshTokenTtlSeconds,
 		arg.IDTokenTtlSeconds,
 		arg.UpdatedAt,
+		arg.BackchannelLogoutUri,
 		arg.ID,
 	)
 	return err

@@ -88,7 +88,8 @@ dark on the right.</sub>
 
 - **OpenID Connect provider** — authorization code flow with PKCE, refresh
   token rotation, discovery, JWKS (ES256, keys encrypted at rest),
-  userinfo, introspection, revocation, RP-initiated logout.
+  userinfo, introspection, revocation, RP-initiated and back-channel logout
+  (applications are told when a user's Kivraid session ends).
 - **Forward auth** — protect apps without native SSO via Traefik, nginx or
   Caddy, registered as first-class applications with their own group access
   policy. See [docs/forward-auth.md](docs/forward-auth.md).
@@ -129,8 +130,10 @@ dark on the right.</sub>
   directory management with a connection test; user impersonation for
   support; an append-only audit trail you can filter and export to CSV; and
   a grouped Settings area — branding (name, logo, sign-in background),
-  email/SMTP, security (two-factor policy, sign-in alerts, automatic
-  signing-key rotation) and read-only system diagnostics.
+  email/SMTP, security (two-factor policy, password policy with an optional
+  breach check, sign-in alerts, automatic signing-key rotation) and
+  read-only system diagnostics. A `kivraid user` command recovers access
+  from the host (reset a password or two-factor, promote an administrator).
 - **English and French** — the interface follows the browser's language
   and can be switched from the account menu or the sign-in page; a
   signed-in user's choice is saved on their account, so emails reach them

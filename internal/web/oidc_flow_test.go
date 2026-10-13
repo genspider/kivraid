@@ -111,7 +111,13 @@ func startIssuer(t *testing.T, public bool) (issuer string, st *store.Store) {
 // login → resume → callback, and returns the authorization code.
 func browseAuthFlow(t *testing.T, authURL string) string {
 	t.Helper()
-	c := newClient(t)
+	return browseAuthFlowWith(t, newClient(t), authURL)
+}
+
+// browseAuthFlowWith is browseAuthFlow with the caller's browser, which
+// keeps the Kivraid session afterwards.
+func browseAuthFlowWith(t *testing.T, c *http.Client, authURL string) string {
+	t.Helper()
 
 	follow := func(u string) *http.Response {
 		t.Helper()

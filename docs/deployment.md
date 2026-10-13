@@ -89,6 +89,34 @@ restarting — pending migrations run automatically at startup.
 older binary refuses to start on a database written by a newer one. To
 roll back, restore the database backup taken before the upgrade.
 
+## Recovering access
+
+The `kivraid user` commands work directly on the database, with the same
+configuration file as the server, for when nobody can sign in to the admin
+any more — the only administrator lost their authenticator app, forgot
+their password with no email delivery configured, or was deactivated:
+
+```sh
+kivraid user list           --config kivraid.yaml
+kivraid user reset-mfa      --config kivraid.yaml --user admin
+kivraid user reset-password --config kivraid.yaml --user admin [--must-change]
+kivraid user promote        --config kivraid.yaml --user alice@example.com
+```
+
+`--user` takes a username or an email address. `reset-mfa` removes the
+authenticator app and its recovery codes (passkeys are kept), as the admin's
+*Reset two-factor* does. `reset-password` prompts for the new password,
+which must follow the password policy; it only applies to local accounts —
+change a directory account's password in the directory. `promote` makes the
+account an administrator and reactivates it. Each change is recorded in the
+activity log with the actor `cli`.
+
+They can run while the server is up. With the Docker image, run them in the
+container against the configuration in the data volume:
+`docker compose exec kivraid /kivraid user list --config /data/kivraid.yaml`.
+When the configuration comes from `KIVRAID_*` environment variables alone,
+pass `--config ""`.
+
 ## Health checks
 
 `GET /healthz` returns `200 ok`. The Docker image declares a

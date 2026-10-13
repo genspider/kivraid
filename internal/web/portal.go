@@ -70,8 +70,8 @@ func (s *Server) handleProfilePassword(w http.ResponseWriter, r *http.Request) {
 		fail(s.t(r, "Password changes are not available for this account."))
 		return
 	}
-	if len(newPW) < 8 {
-		fail(s.t(r, "The new password must be at least 8 characters."))
+	if msg := s.passwordProblem(r, newPW); msg != "" {
+		fail(msg)
 		return
 	}
 	if newPW != confirm {
@@ -178,6 +178,7 @@ func (s *Server) handleSessions(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSessionRevoke(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	target := r.PostFormValue("token_hash")
+	var sids []string
 	err := s.sessions.Iterate(r.Context(), func(ctx context.Context) error {
 		if s.sessions.GetString(ctx, session.KeyUserID) != user.ID {
 			return nil
@@ -185,6 +186,7 @@ func (s *Server) handleSessionRevoke(w http.ResponseWriter, r *http.Request) {
 		token := s.sessions.Token(ctx)
 		hash := sha256.Sum256([]byte(token))
 		if hex.EncodeToString(hash[:]) == target {
+			sids = append(sids, s.sessionSIDs(ctx)...)
 			return s.sessions.Store.Delete(token)
 		}
 		return nil
@@ -193,6 +195,7 @@ func (s *Server) handleSessionRevoke(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
+	s.logoutSessionApps(r.Context(), sids...)
 	s.audit.Record(r.Context(), user.Username, audit.ActionSessionRevoke, "", "one session", s.clientIP(r))
 	http.Redirect(w, r, "/sessions?revoked=1", http.StatusSeeOther)
 }
@@ -200,11 +203,13 @@ func (s *Server) handleSessionRevoke(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSessionsRevokeOthers(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	currentToken := s.sessions.Token(r.Context())
+	var sids []string
 	err := s.sessions.Iterate(r.Context(), func(ctx context.Context) error {
 		if s.sessions.GetString(ctx, session.KeyUserID) != user.ID {
 			return nil
 		}
 		if token := s.sessions.Token(ctx); token != currentToken {
+			sids = append(sids, s.sessionSIDs(ctx)...)
 			return s.sessions.Store.Delete(token)
 		}
 		return nil
@@ -213,6 +218,7 @@ func (s *Server) handleSessionsRevokeOthers(w http.ResponseWriter, r *http.Reque
 		s.serverError(w, r, err)
 		return
 	}
+	s.logoutSessionApps(r.Context(), sids...)
 	s.audit.Record(r.Context(), user.Username, audit.ActionSessionRevoke, "", "all other sessions", s.clientIP(r))
 	http.Redirect(w, r, "/sessions?revoked=others", http.StatusSeeOther)
 }

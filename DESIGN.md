@@ -309,7 +309,14 @@ settings tab with a two-factor policy (optional, administrators,
 everyone) plus a per-application requirement, new-device sign-in alerts by
 email, automatic signing-key rotation with retirement of old keys, and a
 configurable activity-log retention; a readable, filterable activity log
-and a 7-day sign-in chart on the overview.
+and a 7-day sign-in chart on the overview. Then OpenID Connect Back-Channel
+Logout (a stable per-session `sid`, carried by ID tokens and refresh
+tokens, and an `oidc_sessions` table of the applications each session
+signed in to; logout tokens are signed with the ID token key and delivered
+in the background), a password policy (minimum length and an optional
+Have I Been Pwned k-anonymity check, failing open) applied to every
+password Kivraid sets, and `kivraid user` recovery commands (list,
+reset-password, reset-mfa, promote).
 
 Possible later: SAML, self-registration, non-OIDC social providers (e.g.
 GitHub), SCIM.

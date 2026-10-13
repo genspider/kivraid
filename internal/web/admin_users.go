@@ -270,8 +270,8 @@ func (s *Server) handleAdminUserCreate(w http.ResponseWriter, r *http.Request) {
 		// The user chooses their password from the invitation; until then
 		// the account holds a random one nobody knows.
 		password, form.MustChange = randomHex(32), false
-	} else if len(password) < 8 {
-		fail(s.t(r, "The password must be at least 8 characters."))
+	} else if msg := s.passwordProblem(r, password); msg != "" {
+		fail(msg)
 		return
 	}
 	groups, err := s.localGroups(r.Context())
@@ -513,9 +513,9 @@ func (s *Server) handleAdminUserPassword(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	password := r.PostFormValue("password")
-	if len(password) < 8 {
+	if msg := s.passwordProblem(r, password); msg != "" {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		s.renderUserDetail(w, r, target, s.t(r, "The new password must be at least 8 characters."), false, false, false)
+		s.renderUserDetail(w, r, target, msg, false, false, false)
 		return
 	}
 	if err := s.resetPassword(r.Context(), target, password); err != nil {
@@ -566,8 +566,9 @@ func (s *Server) handleAdminUserSessionsRevoke(w http.ResponseWriter, r *http.Re
 	http.Redirect(w, r, "/admin/users/"+target.ID+"?revoked=1", http.StatusSeeOther)
 }
 
-// revokeUserAccess kills the user's sessions and OAuth tokens; used when
-// an account is deactivated or deleted.
+// revokeUserAccess kills the user's sessions and OAuth tokens, and signs
+// them out of the applications that support back-channel logout; used
+// when an account is deactivated or deleted.
 func (s *Server) revokeUserAccess(ctx context.Context, userID string) {
 	if err := s.sessions.Iterate(ctx, func(sctx context.Context) error {
 		if s.sessions.GetString(sctx, session.KeyUserID) == userID {
@@ -582,6 +583,9 @@ func (s *Server) revokeUserAccess(ctx context.Context, userID string) {
 	}
 	if err := s.store.DeleteRefreshTokensByUser(ctx, userID); err != nil {
 		s.log.Warn("revoke refresh tokens", "user", userID, "err", err)
+	}
+	if s.backchannel != nil {
+		s.backchannel.User(ctx, userID)
 	}
 }
 

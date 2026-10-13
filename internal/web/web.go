@@ -31,6 +31,7 @@ import (
 	"github.com/kivraid/kivraid/internal/mailer"
 	"github.com/kivraid/kivraid/internal/mfa"
 	"github.com/kivraid/kivraid/internal/oidcserver"
+	"github.com/kivraid/kivraid/internal/pwpolicy"
 	"github.com/kivraid/kivraid/internal/ratelimit"
 	"github.com/kivraid/kivraid/internal/sources/ldap"
 	"github.com/kivraid/kivraid/internal/sources/local"
@@ -60,6 +61,10 @@ type Server struct {
 	broker    *broker.Manager
 	log       *slog.Logger
 
+	// backchannel notifies applications when a session ends (nil without
+	// an OIDC provider).
+	backchannel *oidcserver.BackchannelLogout
+
 	// smtpEnabled caches whether email delivery is configured, so templates
 	// can gate "forgot password" / "verify email" affordances without a DB
 	// hit per render. Refreshed at startup and after an admin saves SMTP.
@@ -70,6 +75,12 @@ type Server struct {
 	// newDeviceAlerts caches whether to email users about sign-ins from
 	// unknown browsers (same refresh points as mfaPolicy).
 	newDeviceAlerts atomic.Bool
+	// passwordPolicy caches the instance password policy (a
+	// pwpolicy.Policy), same refresh points as mfaPolicy.
+	passwordPolicy atomic.Value
+	// breaches looks passwords up in known data breaches when the policy
+	// asks for it.
+	breaches pwpolicy.BreachChecker
 
 	// Login brute-force protection: per-IP on attempts, per-username on
 	// failures.
@@ -112,6 +123,9 @@ type Deps struct {
 	Mailer    *mailer.Mailer
 	Broker    *broker.Manager
 	Log       *slog.Logger
+	// Breaches checks new passwords against known data breaches when the
+	// password policy enables it; nil uses Have I Been Pwned.
+	Breaches pwpolicy.BreachChecker
 }
 
 func NewServer(d Deps) (*Server, error) {
@@ -142,6 +156,13 @@ func NewServer(d Deps) (*Server, error) {
 		ipLimiter:   ratelimit.New(rate.Every(6*time.Second), 10),
 		userLimiter: ratelimit.New(rate.Every(12*time.Second), 5),
 		pages:       map[string]map[string]*template.Template{},
+		breaches:    d.Breaches,
+	}
+	if s.breaches == nil {
+		s.breaches = pwpolicy.NewPwnedPasswords()
+	}
+	if d.OIDCStore != nil {
+		s.backchannel = oidcserver.NewBackchannelLogout(d.OIDCStore, d.Log)
 	}
 
 	// Load the admin-editable branding before first render; defaults are
@@ -193,6 +214,7 @@ func (s *Server) parsePages(lang, assetV string) error {
 		"brandHasBackground": s.brandHasBackground,
 		"brandBackgroundURL": func() string { return "/brand/background?v=" + s.brandBackgroundVersion() },
 		"mailEnabled":        s.smtpEnabled.Load,
+		"passwordMinLength":  s.passwordMinLength,
 	}
 	pages := map[string]*template.Template{}
 	standalone := []string{"login.html", "login_password.html", "login_mfa.html", "error.html", "setup.html",

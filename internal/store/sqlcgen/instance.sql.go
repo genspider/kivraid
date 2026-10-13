@@ -29,7 +29,7 @@ func (q *Queries) ClearLoginBackground(ctx context.Context, updatedAt time.Time)
 }
 
 const getInstanceSettings = `-- name: GetInstanceSettings :one
-SELECT id, brand_name, logo, logo_mime, updated_at, login_background, login_background_mime, mfa_policy, new_device_alerts, key_rotation_days, audit_retention_days FROM instance_settings WHERE id = 1
+SELECT id, brand_name, logo, logo_mime, updated_at, login_background, login_background_mime, mfa_policy, new_device_alerts, key_rotation_days, audit_retention_days, password_min_length, password_breach_check FROM instance_settings WHERE id = 1
 `
 
 func (q *Queries) GetInstanceSettings(ctx context.Context) (InstanceSetting, error) {
@@ -47,6 +47,8 @@ func (q *Queries) GetInstanceSettings(ctx context.Context) (InstanceSetting, err
 		&i.NewDeviceAlerts,
 		&i.KeyRotationDays,
 		&i.AuditRetentionDays,
+		&i.PasswordMinLength,
+		&i.PasswordBreachCheck,
 	)
 	return i, err
 }
@@ -148,5 +150,20 @@ type SetNewDeviceAlertsParams struct {
 
 func (q *Queries) SetNewDeviceAlerts(ctx context.Context, arg SetNewDeviceAlertsParams) error {
 	_, err := q.db.ExecContext(ctx, setNewDeviceAlerts, arg.NewDeviceAlerts, arg.UpdatedAt)
+	return err
+}
+
+const setPasswordPolicy = `-- name: SetPasswordPolicy :exec
+UPDATE instance_settings SET password_min_length = $1, password_breach_check = $2, updated_at = $3 WHERE id = 1
+`
+
+type SetPasswordPolicyParams struct {
+	PasswordMinLength   int32
+	PasswordBreachCheck bool
+	UpdatedAt           time.Time
+}
+
+func (q *Queries) SetPasswordPolicy(ctx context.Context, arg SetPasswordPolicyParams) error {
+	_, err := q.db.ExecContext(ctx, setPasswordPolicy, arg.PasswordMinLength, arg.PasswordBreachCheck, arg.UpdatedAt)
 	return err
 }

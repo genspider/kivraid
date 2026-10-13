@@ -1,6 +1,6 @@
 {{define "content"}}
 {{template "settingstabs" .}}
-<p class="mb-6 text-sm text-muted">{{t "Sign-in requirements and alerts, token signing keys, and how long activity is kept."}}</p>
+<p class="mb-6 text-sm text-muted">{{t "Sign-in requirements and alerts, password rules, token signing keys, and how long activity is kept."}}</p>
 
 <div class="space-y-4">
   {{if .Data.Saved}}<div data-flash="{{t "Security settings saved."}}" data-variant="success" hidden></div>{{end}}
@@ -37,6 +37,22 @@
       </label>
       {{if not .Data.CanEmail}}<p class="mt-2 text-xs text-warn">{{t "Email delivery is not configured: no alert will be sent until it is (Settings → Email)."}}</p>{{end}}
     </div>
+    <div class="border-t border-line pt-5">
+      <h2 class="text-sm font-semibold">{{t "Passwords"}}</h2>
+      <p class="mt-1 text-sm text-muted">{{t "Applies to every new password set through Kivraid, for local and directory accounts. Existing passwords stay valid until they are changed."}}</p>
+      <label for="password_min_length" class="label mt-3">{{t "Minimum length"}}</label>
+      <select id="password_min_length" name="password_min_length" class="select w-auto">
+        {{range .Data.PasswordChoices}}<option value="{{.}}" {{if eq . $.Data.PasswordMinLen}}selected{{end}}>{{tn . "%d character" "%d characters"}}</option>{{end}}
+      </select>
+      <label class="mt-4 flex cursor-pointer items-start gap-2 text-sm">
+        <input type="checkbox" name="password_breach_check" class="mt-0.5 accent-accent" {{if .Data.BreachCheck}}checked{{end}}>
+        <span>
+          <span class="font-medium">{{t "Reject passwords found in known data breaches"}}</span>
+          <span class="block text-xs text-muted">{{t "Checked against Have I Been Pwned: only the first 5 characters of the password's SHA-1 hash are sent, never the password. Needs outbound HTTPS; if the service cannot be reached, the password is accepted."}}</span>
+        </span>
+      </label>
+    </div>
+
     <div class="border-t border-line pt-5">
       <h2 class="text-sm font-semibold">{{t "Token signing key"}}</h2>
       <p class="mt-1 text-sm text-muted">{{t "How often to replace the key that signs ID and access tokens. Previous keys stay published for 7 days, then are retired. You can also rotate now from Settings → System."}}</p>

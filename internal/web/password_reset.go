@@ -129,8 +129,8 @@ func (s *Server) handleResetSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	password := r.PostFormValue("password")
-	if len(password) < 8 {
-		fail(s.t(r, "The new password must be at least 8 characters."))
+	if msg := s.passwordProblem(r, password); msg != "" {
+		fail(msg)
 		return
 	}
 	if password != r.PostFormValue("confirm_password") {
@@ -184,8 +184,8 @@ func (s *Server) handlePasswordChangeRequired(w http.ResponseWriter, r *http.Req
 		return
 	}
 	password := r.PostFormValue("password")
-	if len(password) < 8 {
-		render(http.StatusUnprocessableEntity, s.t(r, "The new password must be at least 8 characters."))
+	if msg := s.passwordProblem(r, password); msg != "" {
+		render(http.StatusUnprocessableEntity, msg)
 		return
 	}
 	if password != r.PostFormValue("confirm_password") {

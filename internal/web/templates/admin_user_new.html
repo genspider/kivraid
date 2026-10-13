@@ -50,7 +50,7 @@
         <label class="label" for="password">{{t "Initial password"}}</label>
         <div class="flex items-center gap-2">
           <div class="relative min-w-0 flex-1">
-            <input class="input pr-11 font-mono" id="password" name="password" type="password" autocomplete="new-password" minlength="8" data-secret>
+            <input class="input pr-11 font-mono" id="password" name="password" type="password" autocomplete="new-password" minlength="{{passwordMinLength}}" data-secret>
             <button type="button" class="absolute inset-y-0 right-0 flex cursor-pointer items-center px-3 text-faint hover:text-fg" data-secret-toggle aria-label="{{t "Show password"}}">
               <svg data-eye class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
               <svg data-eye-off class="hidden size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.68M6.1 6.1A13.2 13.2 0 0 0 2 12s3.5 7 10 7a9.1 9.1 0 0 0 5.9-2.1M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="M2 2l20 20"/></svg>
@@ -59,7 +59,7 @@
           <button type="button" class="btn-secondary shrink-0" data-generate-password="password">{{t "Generate"}}</button>
           <button type="button" class="btn-ghost shrink-0" data-copy-field="password">{{t "Copy"}}</button>
         </div>
-        <p class="mt-1.5 text-xs text-muted">{{t "At least 8 characters."}}</p>
+        <p class="mt-1.5 text-xs text-muted">{{t "At least %d characters." passwordMinLength}}</p>
       </div>
       <label class="flex cursor-pointer items-center gap-2 text-sm">
         <input type="checkbox" name="must_change" class="accent-accent" {{if .Data.Form.MustChange}}checked{{end}}>

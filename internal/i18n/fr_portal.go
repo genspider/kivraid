@@ -40,9 +40,10 @@ func init() {
 		"New password":         "Nouveau mot de passe",
 		"Confirm new password": "Confirmez le nouveau mot de passe",
 		"Set new password":     "Définir le nouveau mot de passe",
-		"The new password must be at least 8 characters.":          "Le nouveau mot de passe doit comporter au moins 8 caractères.",
-		"The passwords do not match.":                              "Les mots de passe ne correspondent pas.",
-		"Choose a password different from the one you were given.": "Choisissez un mot de passe différent de celui qui vous a été donné.",
+		"The password must be at least %d characters.":                          "Le mot de passe doit comporter au moins %d caractères.",
+		"This password appears in a known data breach. Choose a different one.": "Ce mot de passe figure dans une fuite de données connue. Choisissez-en un autre.",
+		"The passwords do not match.":                                           "Les mots de passe ne correspondent pas.",
+		"Choose a password different from the one you were given.":              "Choisissez un mot de passe différent de celui qui vous a été donné.",
 
 		// First-run setup.
 		"Welcome":       "Bienvenue",
@@ -54,7 +55,6 @@ func init() {
 		"Create administrator": "Créer l'administrateur",
 		"This account gets full administrative rights.": "Ce compte dispose de tous les droits d'administration.",
 		"Username and email are required.":              "Le nom d'utilisateur et l'e-mail sont obligatoires.",
-		"The password must be at least 8 characters.":   "Le mot de passe doit comporter au moins 8 caractères.",
 
 		// Error pages.
 		"Back to home":         "Retour à l'accueil",
@@ -154,12 +154,12 @@ func init() {
 		"Change password":                 "Changer le mot de passe",
 		"Your password lives in the directory; the change is written back to it.": "Votre mot de passe est stocké dans l'annuaire ; la modification y est enregistrée.",
 		"Current password": "Mot de passe actuel",
-		"At least 8 characters. A long passphrase of a few unrelated words is both strong and easy to remember.": "Au moins 8 caractères. Une longue phrase de passe composée de quelques mots sans rapport est à la fois robuste et facile à retenir.",
-		"Password changes are not available for this account.":                                                   "La modification du mot de passe n'est pas disponible pour ce compte.",
-		"The new passwords do not match.":                                                                        "Les nouveaux mots de passe ne correspondent pas.",
-		"The current password is incorrect.":                                                                     "Le mot de passe actuel est incorrect.",
-		"Password changes are disabled for your directory.":                                                      "La modification du mot de passe est désactivée pour votre annuaire.",
-		"The directory refused the password change. Contact your administrator.":                                 "L'annuaire a refusé la modification du mot de passe. Contactez votre administrateur.",
+		"At least %d characters. A long passphrase of a few unrelated words is both strong and easy to remember.": "Au moins %d caractères. Une longue phrase de passe composée de quelques mots sans rapport est à la fois robuste et facile à retenir.",
+		"Password changes are not available for this account.":                                                    "La modification du mot de passe n'est pas disponible pour ce compte.",
+		"The new passwords do not match.":                                                                         "Les nouveaux mots de passe ne correspondent pas.",
+		"The current password is incorrect.":                                                                      "Le mot de passe actuel est incorrect.",
+		"Password changes are disabled for your directory.":                                                       "La modification du mot de passe est désactivée pour votre annuaire.",
+		"The directory refused the password change. Contact your administrator.":                                  "L'annuaire a refusé la modification du mot de passe. Contactez votre administrateur.",
 
 		// Email verification.
 		"Link expired": "Lien expiré",

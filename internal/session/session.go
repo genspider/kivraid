@@ -59,6 +59,13 @@ const (
 	// end-session endpoint (RP-initiated logout). Absent for local sessions.
 	KeyUpstreamProvider = "upstreamProvider"
 	KeyUpstreamIDToken  = "upstreamIDToken"
+	// KeySID is the session's stable identifier for OpenID Connect: the sid
+	// claim of the ID tokens issued through it and of the back-channel
+	// logout tokens sent when it ends. Unlike the session token, it does
+	// not change on renewal. KeyImpersonatorSID stashes the administrator's
+	// own sid while an impersonation runs under a sid of its own.
+	KeySID             = "sid"
+	KeyImpersonatorSID = "impersonatorSID"
 )
 
 // NewManager builds the session manager. lifetime is the absolute session

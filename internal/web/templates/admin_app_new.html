@@ -75,6 +75,11 @@
                 placeholder="https://grafana.example.com">{{.Data.Form.PostLogoutURIs}}</textarea>
       <p class="mt-1.5 text-xs text-muted">{{t "Where the application may send users after signing out of Kivraid. One per line, exact match; leave empty if it does not use single sign-out."}}</p>
     </div>
+    <div>
+      <label class="label" for="backchannel_logout_uri">{{t "Back-channel logout URI"}} <span class="font-normal text-faint">{{t "(optional)"}}</span></label>
+      <input class="input font-mono" id="backchannel_logout_uri" placeholder="https://app.example.com/backchannel-logout" name="backchannel_logout_uri" value="{{.Data.Form.BackchannelURI}}">
+      <p class="mt-1.5 text-xs text-muted">{{t "Kivraid posts a logout token here when a user signs out, is signed out by an administrator, or is deactivated, so the application ends its own session. Leave empty if the application does not support back-channel logout."}}</p>
+    </div>
     <fieldset>
       <legend class="label">{{t "Client type"}}</legend>
       <div class="space-y-2">
