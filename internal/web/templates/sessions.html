@@ -3,7 +3,7 @@
 {{if eq .Data.Revoked "others"}}<div data-flash="{{t "All other sessions signed out."}}" data-variant="success" hidden></div>{{end}}
 <div class="page-head mb-8">
   <div>
-    <h1 class="text-2xl font-semibold tracking-tight">{{t "Sessions"}}</h1>
+    <h2 class="page-title">{{t "Sessions"}}</h2>
     <p class="mt-1 text-sm text-muted">{{t "Devices currently signed in to your account."}}</p>
   </div>
   {{if .Data.Others}}
@@ -20,7 +20,7 @@
   {{range .Data.Sessions}}
   <div class="flex items-center gap-4 p-4">
     <span class="btn-icon pointer-events-none border border-line">
-      <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      {{icon "monitor" "size-[18px]"}}
     </span>
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2">

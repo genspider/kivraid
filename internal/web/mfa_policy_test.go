@@ -64,7 +64,7 @@ func TestMFAPolicyAdminsRequiresEnrollment(t *testing.T) {
 	}
 
 	// And it can no longer be turned off.
-	if _, body := getPage(t, c, ts.URL+"/profile"); strings.Contains(body, "Disable two-factor") {
+	if _, body := getPage(t, c, ts.URL+"/profile/security"); !strings.Contains(body, "Regenerate recovery codes") || strings.Contains(body, "Disable two-factor") {
 		t.Error("required two-factor should not offer to disable it")
 	}
 }

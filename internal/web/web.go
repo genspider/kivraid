@@ -186,9 +186,13 @@ func NewServer(d Deps) (*Server, error) {
 // translation functions.
 func (s *Server) parsePages(lang, assetV string) error {
 	funcs := template.FuncMap{
-		"initials":  initials,
-		"tileClass": tileClass,
-		"list":      func(v ...string) []string { return v },
+		"initials":    initials,
+		"tileClass":   tileClass,
+		"avatarClass": avatarClass,
+		"icon":        icon,
+		"navSection":  navSection,
+		"version":     func() string { return s.version },
+		"list":        func(v ...string) []string { return v },
 		// Translation: t formats like fmt.Sprintf, tn picks singular/plural.
 		"t": func(msg string, args ...any) string { return i18n.T(lang, msg, args...) },
 		"tn": func(n any, one, other string) string {
@@ -297,6 +301,8 @@ func (s *Server) Handler() http.Handler {
 	web.Handle("GET /avatar/{id}", s.requireAuth(http.HandlerFunc(s.handleAvatar)))
 	web.Handle("GET /appicon/{id}", s.requireAuth(http.HandlerFunc(s.handleAppIcon)))
 	web.Handle("GET /profile", s.requireAuth(http.HandlerFunc(s.handleProfile)))
+	web.Handle("GET /profile/password", s.requireAuth(http.HandlerFunc(s.handleProfile)))
+	web.Handle("GET /profile/security", s.requireAuth(http.HandlerFunc(s.handleProfile)))
 	web.Handle("POST /profile/password", s.requireAuth(http.HandlerFunc(s.handleProfilePassword)))
 	web.Handle("POST /profile/photo", s.requireAuth(http.HandlerFunc(s.handleProfilePhoto)))
 	web.Handle("POST /profile/photo/delete", s.requireAuth(http.HandlerFunc(s.handleProfilePhotoDelete)))
@@ -438,6 +444,26 @@ func localTime(t time.Time) template.HTML {
 	u := t.UTC()
 	return template.HTML(fmt.Sprintf(`<time datetime="%s" data-local>%s UTC</time>`,
 		u.Format(time.RFC3339), template.HTMLEscapeString(u.Format("Jan 2, 2006 15:04"))))
+}
+
+// avatarClass picks the colour of an initials avatar from a name, stably.
+func avatarClass(name string) string {
+	h := fnv.New32a()
+	h.Write([]byte(strings.ToLower(name)))
+	return "av-" + strconv.Itoa(int(h.Sum32()%6))
+}
+
+// navSection tells the layout which shell a page belongs to: "admin" and
+// "account" pages get a side menu, the others a plain centred column.
+func navSection(active string) string {
+	switch active {
+	case "dashboard", "apps", "ldap", "providers", "routing", "users", "groups",
+		"audit", "branding", "email", "system", "security":
+		return "admin"
+	case "profile", "password", "security-account", "sessions":
+		return "account"
+	}
+	return ""
 }
 
 // tileClass picks one of the app-tile gradients from a name, stably, so an

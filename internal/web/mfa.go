@@ -26,7 +26,7 @@ type mfaRecoveryData struct {
 func (s *Server) handleMFABegin(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	if user.TotpEnabled {
-		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		http.Redirect(w, r, "/profile/security", http.StatusSeeOther)
 		return
 	}
 	secret, err := s.mfa.GenerateSecret(user.Username)
@@ -40,7 +40,7 @@ func (s *Server) handleMFABegin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) renderMFAEnroll(w http.ResponseWriter, r *http.Request, secret, errMsg string) {
 	s.render(w, r, "mfa_enroll.html", pageData{
-		Title: "Two-factor", Active: "profile", CSRF: s.csrfToken(r.Context()),
+		Title: "Two-factor", Active: "security-account", CSRF: s.csrfToken(r.Context()),
 		User: currentUser(r),
 		Data: mfaEnrollData{SecretRaw: secret, Secret: mfa.FormatSecret(secret), Error: errMsg},
 	})
@@ -69,7 +69,7 @@ func (s *Server) handleMFAEnable(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	secret := s.sessions.GetString(r.Context(), session.KeyMFAEnroll)
 	if secret == "" {
-		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		http.Redirect(w, r, "/profile/security", http.StatusSeeOther)
 		return
 	}
 	counter, ok := mfa.MatchCounter(secret, r.PostFormValue("code"), time.Now())
@@ -91,10 +91,10 @@ func (s *Server) handleMFAEnable(w http.ResponseWriter, r *http.Request) {
 	// The code just entered proves the second factor for this session too,
 	// which satisfies a two-factor requirement without signing in again.
 	s.markSecondFactor(r.Context(), loginPasswordTOTP)
-	next := s.safeNext(s.sessions.PopString(r.Context(), session.KeyMFANext), "/profile")
+	next := s.safeNext(s.sessions.PopString(r.Context(), session.KeyMFANext), "/profile/security")
 	s.audit.Record(r.Context(), user.Username, audit.ActionMFAEnable, "", "", s.clientIP(r))
 	s.render(w, r, "mfa_recovery.html", pageData{
-		Title: "Recovery codes", Active: "profile", CSRF: s.csrfToken(r.Context()),
+		Title: "Recovery codes", Active: "security-account", CSRF: s.csrfToken(r.Context()),
 		User: user, Data: mfaRecoveryData{Codes: codes, Next: next},
 	})
 }
@@ -103,7 +103,7 @@ func (s *Server) handleMFAEnable(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleMFADisable(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	if !user.TotpEnabled {
-		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		http.Redirect(w, r, "/profile/security", http.StatusSeeOther)
 		return
 	}
 	if s.mfaRequiredFor(user) {
@@ -133,7 +133,7 @@ func (s *Server) handleMFADisable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.audit.Record(r.Context(), user.Username, audit.ActionMFADisable, "", "", s.clientIP(r))
-	http.Redirect(w, r, "/profile?mfa=off", http.StatusSeeOther)
+	http.Redirect(w, r, "/profile/security?mfa=off", http.StatusSeeOther)
 }
 
 // handleMFARegenerateRecovery issues a fresh set of recovery codes after
@@ -141,7 +141,7 @@ func (s *Server) handleMFADisable(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleMFARegenerateRecovery(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	if !user.TotpEnabled {
-		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		http.Redirect(w, r, "/profile/security", http.StatusSeeOther)
 		return
 	}
 	ok, err := s.mfa.ValidateForUser(r.Context(), user, r.PostFormValue("code"))
@@ -160,7 +160,7 @@ func (s *Server) handleMFARegenerateRecovery(w http.ResponseWriter, r *http.Requ
 	}
 	s.audit.Record(r.Context(), user.Username, audit.ActionMFARecovery, "", "regenerated", s.clientIP(r))
 	s.render(w, r, "mfa_recovery.html", pageData{
-		Title: "Recovery codes", Active: "profile", CSRF: s.csrfToken(r.Context()),
+		Title: "Recovery codes", Active: "security-account", CSRF: s.csrfToken(r.Context()),
 		User: user, Data: mfaRecoveryData{Codes: codes, New: true},
 	})
 }

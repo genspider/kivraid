@@ -411,6 +411,7 @@ func (s *Server) handleEndSession(w http.ResponseWriter, r *http.Request) {
 }
 
 type profileData struct {
+	Tab               string // "profile", "password" or "security"
 	Groups            []sqlcgen.Group
 	CanChangePW       bool
 	PWError           string
@@ -451,12 +452,22 @@ func (s *Server) renderProfile(w http.ResponseWriter, r *http.Request, user sqlc
 			return
 		}
 	}
+	// The account settings are split in pages (profile, password,
+	// two-factor & passkeys); a form posted from one re-renders that one.
+	tab, title, active := "profile", "Profile", "profile"
+	switch p := r.URL.Path; {
+	case strings.HasPrefix(p, "/profile/password"):
+		tab, title, active = "password", "Password", "password"
+	case strings.HasPrefix(p, "/profile/security"), strings.HasPrefix(p, "/profile/mfa"), strings.HasPrefix(p, "/profile/passkeys"):
+		tab, title, active = "security", "Two-factor & passkeys", "security-account"
+	}
 	s.render(w, r, "profile.html", pageData{
-		Title:  "Profile",
-		Active: "profile",
+		Title:  title,
+		Active: active,
 		CSRF:   s.csrfToken(r.Context()),
 		User:   user,
 		Data: profileData{
+			Tab:               tab,
 			Groups:            groups,
 			CanChangePW:       s.canChangePassword(r, user),
 			PWError:           pwError,

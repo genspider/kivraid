@@ -1,8 +1,8 @@
 {{define "content"}}
 <div class="mb-8">
-  <h1 class="text-2xl font-semibold tracking-tight">
+  <h2 class="page-title">
     {{if .Data.New}}{{t "New recovery codes"}}{{else}}{{t "Two-factor is on"}}{{end}}
-  </h1>
+  </h2>
   <p class="mt-1 text-sm text-muted">{{t "Store these recovery codes somewhere safe. Each one works once if you lose access to your authenticator."}}</p>
 </div>
 

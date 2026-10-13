@@ -1,12 +1,12 @@
 {{define "content"}}
 <div class="page-head mb-6">
   <div>
-    <h1 class="text-2xl font-semibold tracking-tight">{{t "Activity"}}</h1>
+    <h2 class="page-title">{{t "Activity"}}</h2>
     <p class="mt-1 text-sm text-muted">{{t "Security-relevant events, most recent first."}} {{if .Data.Retention}}{{tn .Data.Retention "Kept for %d day" "Kept for %d days"}}{{else}}{{t "Kept forever"}}{{end}} (<a href="/admin/settings/security" class="underline underline-offset-2 hover:text-fg">{{t "change"}}</a>).</p>
   </div>
   <a href="/admin/audit/export.csv{{with .Data.FilterQS}}?{{.}}{{end}}"
      class="btn-secondary shrink-0" data-no-spinner>
-    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+    {{icon "download" "size-4"}}
     {{t "Export CSV"}}
   </a>
 </div>
@@ -80,7 +80,7 @@
 </div>
 {{else}}
 <div class="card flex flex-col items-center gap-3 px-6 py-16 text-center">
-  <svg class="size-8 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+  {{icon "clock" "size-8 text-faint"}}
   <div>
     {{if .Data.Filtered}}
     <h2 class="text-sm font-semibold">{{t "No matching events"}}</h2>

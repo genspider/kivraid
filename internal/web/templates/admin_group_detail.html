@@ -1,10 +1,10 @@
 {{define "content"}}
-<a href="/admin/groups" class="back-link"><svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>{{t "Groups"}}</a>
+<a href="/admin/groups" class="back-link">{{icon "chevron-left" "size-4"}}{{t "Groups"}}</a>
 <div class="mb-8 flex items-center gap-4">
-  <span class="avatar-lg">{{initials .Data.Group.Name}}</span>
+  <span class="avatar-lg {{avatarClass .Data.Group.Name}}">{{initials .Data.Group.Name}}</span>
   <div class="min-w-0">
     <div class="flex items-center gap-2">
-      <h1 class="truncate text-2xl font-semibold tracking-tight">{{.Data.Group.Name}}</h1>
+      <h2 class="truncate page-title">{{.Data.Group.Name}}</h2>
       {{if .Data.IsLDAP}}<span class="badge">{{if .Data.SourceName}}{{.Data.SourceName}}{{else}}LDAP{{end}}</span>{{else if .Data.Editable}}<span class="badge">{{t "Local"}}</span>{{else}}<span class="badge">{{t "Federated"}}</span>{{end}}
     </div>
     <p class="mt-0.5 text-xs text-faint">{{tn .Data.MemberCount "%d member" "%d members"}}</p>
@@ -61,7 +61,7 @@
         {{if .PhotoMime}}
         <img class="size-8 shrink-0 rounded-full object-cover" src="/avatar/{{.ID}}" alt="">
         {{else}}
-        <span class="avatar">{{initials .Name}}</span>
+        <span class="avatar {{avatarClass .Name}}">{{initials .Name}}</span>
         {{end}}
         <div class="min-w-0 flex-1">
           <a href="/admin/users/{{.ID}}" class="truncate text-sm font-medium hover:underline">{{.Name}}</a>

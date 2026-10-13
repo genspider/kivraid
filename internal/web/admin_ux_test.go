@@ -144,7 +144,7 @@ func TestUsersListFilters(t *testing.T) {
 	if strings.Contains(body, "Bob Active") {
 		t.Error("source=ldap should exclude local users")
 	}
-	if _, body = getPage(t, c, ts.URL+"/admin/users"); !strings.Contains(body, "Never signed in") {
+	if _, body = getPage(t, c, ts.URL+"/admin/users"); !strings.Contains(body, "Last sign-in") || !strings.Contains(body, "Never") {
 		t.Error("users list should show the last sign-in")
 	}
 }

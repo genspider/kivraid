@@ -1,5 +1,5 @@
 {{define "content"}}
-<a href="/admin/applications" class="back-link"><svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>{{t "Applications"}}</a>
+<a href="/admin/applications" class="back-link">{{icon "chevron-left" "size-4"}}{{t "Applications"}}</a>
 <div class="mb-8 flex items-center gap-4">
   {{if .Data.App.IconMime}}
   <img class="size-14 shrink-0 rounded-xl object-cover" src="/appicon/{{.Data.App.ID}}" alt="">
@@ -8,7 +8,7 @@
   {{end}}
   <div class="min-w-0">
     <div class="flex items-center gap-2">
-      <h1 class="truncate text-2xl font-semibold tracking-tight">{{.Data.App.Name}}</h1>
+      <h2 class="truncate page-title">{{.Data.App.Name}}</h2>
       {{if .Data.Provider.Public}}<span class="badge">{{t "Public · PKCE"}}</span>{{else}}<span class="badge">{{t "Confidential"}}</span>{{end}}
     </div>
     <p class="mt-0.5 font-mono text-xs text-faint">{{.Data.App.Slug}}</p>

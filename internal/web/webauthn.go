@@ -68,7 +68,7 @@ func (s *Server) handlePasskeyDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.audit.Record(r.Context(), user.Username, audit.ActionPasskeyRemove, "", "", s.clientIP(r))
-	http.Redirect(w, r, "/profile", http.StatusSeeOther)
+	http.Redirect(w, r, "/profile/security", http.StatusSeeOther)
 }
 
 // handlePasskeyLoginBegin starts a usernameless passkey assertion.

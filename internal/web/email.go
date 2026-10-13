@@ -179,8 +179,8 @@ func emailHTML(lang, brand, heading, name, body, buttonLabel, link string) strin
 <h1 style="margin:12px 0 0;font-size:20px;font-weight:600;color:#18181b">%s</h1></td></tr>
 <tr><td style="padding:8px 32px 0;font-size:15px;line-height:1.55;color:#3f3f46">%s</td></tr>
 <tr><td style="padding:12px 32px 0;font-size:15px;line-height:1.55;color:#3f3f46">%s</td></tr>
-<tr><td style="padding:24px 32px 8px"><a href="%s" style="display:inline-block;background:#6d28d9;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:11px 20px;border-radius:9px">%s</a></td></tr>
-<tr><td style="padding:16px 32px 28px;font-size:12px;line-height:1.5;color:#a1a1aa">%s<br><span style="color:#6d28d9;word-break:break-all">%s</span></td></tr>
+<tr><td style="padding:24px 32px 8px"><a href="%s" style="display:inline-block;background:#2c63ce;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:11px 20px;border-radius:9px">%s</a></td></tr>
+<tr><td style="padding:16px 32px 28px;font-size:12px;line-height:1.5;color:#a1a1aa">%s<br><span style="color:#2c63ce;word-break:break-all">%s</span></td></tr>
 </table></td></tr></table></body></html>`,
 		e(lang), e(brand), e(heading), e(i18n.T(lang, "Hi %s,", name)), e(body), e(link), e(buttonLabel),
 		e(i18n.T(lang, "Or paste this link into your browser:")), e(link))

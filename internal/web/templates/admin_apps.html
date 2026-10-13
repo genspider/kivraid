@@ -2,7 +2,7 @@
 {{if .Data.Deleted}}<div data-flash="{{t "Application deleted."}}" data-variant="success" hidden></div>{{end}}
 <div class="page-head mb-8">
   <div>
-    <h1 class="text-2xl font-semibold tracking-tight">{{t "Applications"}}</h1>
+    <h2 class="page-title">{{t "Applications"}}</h2>
     <p class="mt-1 text-sm text-muted">{{t "Applications that sign in through Kivraid, with OpenID Connect or forward auth."}}</p>
   </div>
   <div class="page-actions">
@@ -15,39 +15,55 @@
 </div>
 
 {{if .Data.Apps}}
-<div id="apps-list" class="card divide-y divide-line">
-  {{range .Data.Apps}}
-  <a href="/admin/applications/{{.App.ID}}" data-list-item class="group flex items-center gap-4 p-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-raised">
-    {{if .App.IconMime}}
-    <img class="size-8 shrink-0 rounded-lg object-cover" src="/appicon/{{.App.ID}}" alt="">
-    {{else}}
-    <span class="app-tile size-8 rounded-lg text-xs {{tileClass .App.Name}}">{{initials .App.Name}}</span>
-    {{end}}
-    <div class="min-w-0 flex-1">
-      <div class="flex items-center gap-2">
-        <span class="truncate text-sm font-medium">{{.App.Name}}</span>
-        {{if eq .App.Kind "proxy"}}<span class="badge">{{t "Forward auth"}}</span>{{else if .Public}}<span class="badge">{{t "Public · PKCE"}}</span>{{end}}
-        {{if .App.RequireMfa}}<span class="badge">{{t "2FA required"}}</span>{{end}}
-      </div>
-      <div class="mt-0.5 truncate text-xs text-faint">
-        {{if .Host}}{{.Host}}{{else}}{{.App.Slug}}{{end}}{{with .App.Description}} · {{.}}{{end}}
-      </div>
-    </div>
-    <div class="hidden shrink-0 flex-wrap justify-end gap-1 sm:flex">
-      {{if .Restricted}}
-        {{range .Groups}}<span class="chip">{{.}}</span>{{else}}<span class="badge border-warn/30 bg-warn-soft text-warn">{{t "Locked: no group"}}</span>{{end}}
-      {{else}}
-        <span class="text-xs text-faint">{{t "Everyone"}}</span>
+<div class="card overflow-x-auto">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{t "Application"}}</th>
+        <th class="hidden md:table-cell">{{t "Address"}}</th>
+        <th class="hidden sm:table-cell">{{t "Type"}}</th>
+        <th>{{t "Access"}}</th>
+      </tr>
+    </thead>
+    <tbody id="apps-list">
+      {{range .Data.Apps}}
+      <tr data-list-item>
+        <td>
+          <div class="flex min-w-0 items-center gap-2.5">
+            {{if .App.IconMime}}
+            <img class="size-6 shrink-0 rounded-md object-cover" src="/appicon/{{.App.ID}}" alt="">
+            {{else}}
+            <span class="app-tile size-6 rounded-md text-[10px] {{tileClass .App.Name}}">{{initials .App.Name}}</span>
+            {{end}}
+            <a href="/admin/applications/{{.App.ID}}" class="truncate font-medium text-accent hover:underline">{{.App.Name}}</a>
+            {{with .App.Description}}<span class="hidden truncate text-xs text-faint lg:inline">{{.}}</span>{{end}}
+          </div>
+        </td>
+        <td class="hidden truncate text-muted md:table-cell">{{if .Host}}{{.Host}}{{else}}{{.App.Slug}}{{end}}</td>
+        <td class="hidden whitespace-nowrap sm:table-cell">
+          <div class="flex flex-wrap gap-1">
+            {{if eq .App.Kind "proxy"}}<span class="badge">{{t "Forward auth"}}</span>{{else if .Public}}<span class="badge">{{t "Public · PKCE"}}</span>{{else}}<span class="badge">OIDC</span>{{end}}
+            {{if .App.RequireMfa}}<span class="badge-accent">{{t "2FA required"}}</span>{{end}}
+          </div>
+        </td>
+        <td>
+          <div class="flex flex-wrap gap-1">
+            {{if .Restricted}}
+              {{range .Groups}}<span class="chip">{{.}}</span>{{else}}<span class="badge-tone tone-warn">{{t "Locked: no group"}}</span>{{end}}
+            {{else}}
+              <span class="text-muted">{{t "Everyone"}}</span>
+            {{end}}
+          </div>
+        </td>
+      </tr>
       {{end}}
-    </div>
-    <svg class="size-4 shrink-0 text-faint transition-colors group-hover:text-fg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-  </a>
-  {{end}}
+    </tbody>
+  </table>
 </div>
 <div id="apps-empty" class="mt-4 text-center text-sm text-faint" hidden>{{t "No applications match your filter."}}</div>
 {{else}}
 <div class="card flex flex-col items-center gap-3 px-6 py-16 text-center">
-  <svg class="size-8 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+  {{icon "dashboard" "size-8 text-faint"}}
   <div>
     <h2 class="text-sm font-semibold">{{t "No applications yet"}}</h2>
     <p class="mt-1 text-sm text-muted">{{t "Register your first application to put it behind SSO."}}</p>

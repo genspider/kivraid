@@ -2,8 +2,11 @@
 {{if .Data.MFAOff}}<div data-flash="{{t "Two-factor authentication disabled."}}" data-variant="success" hidden></div>{{end}}
 {{if .Data.VerifySent}}<div data-flash="{{t "Verification email sent — check your inbox."}}" data-variant="success" hidden></div>{{end}}
 {{if .Data.VerifiedFlash}}<div data-flash="{{t "Your email address is verified."}}" data-variant="success" hidden></div>{{end}}
-<div class="mb-8">
-  <h1 class="text-2xl font-semibold tracking-tight">{{t "Profile"}}</h1>
+{{if and .Data.PWError (ne .Data.Tab "password")}}<div class="alert-danger mb-4" role="alert">{{.Data.PWError}}</div>{{end}}
+
+{{if eq .Data.Tab "profile"}}
+<div class="mb-6">
+  <h2 class="page-title">{{t "Profile"}}</h2>
   <p class="mt-1 text-sm text-muted">{{t "Your identity, as applications will see it."}}</p>
 </div>
 
@@ -12,7 +15,7 @@
     {{if .User.PhotoMime}}
     <img class="size-14 shrink-0 rounded-full object-cover" src="/avatar/{{.User.ID}}" alt="">
     {{else}}
-    <span class="avatar-lg">{{initials .User.Name}}</span>
+    <span class="avatar-lg {{avatarClass .User.Name}}">{{initials .User.Name}}</span>
     {{end}}
     <div class="min-w-0">
       <div class="flex items-center gap-2">
@@ -24,7 +27,7 @@
       <div class="mt-1.5 flex flex-wrap items-center gap-2">
         {{if .Data.EmailVerified}}
         <span class="inline-flex items-center gap-1 text-xs font-medium text-accent">
-          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          {{icon "check" "size-3.5"}}
           {{t "Email verified"}}
         </span>
         {{else}}
@@ -69,7 +72,7 @@
   <h2 class="text-sm font-semibold">{{t "Photo"}}</h2>
   <div class="flex items-center gap-4" data-upload>
     <span data-preview data-preview-class="size-12 shrink-0 rounded-full object-cover">
-      {{if .User.PhotoMime}}<img class="size-12 shrink-0 rounded-full object-cover" src="/avatar/{{.User.ID}}" alt="">{{else}}<span class="avatar size-12 text-base">{{initials .User.Name}}</span>{{end}}
+      {{if .User.PhotoMime}}<img class="size-12 shrink-0 rounded-full object-cover" src="/avatar/{{.User.ID}}" alt="">{{else}}<span class="avatar size-12 text-base {{avatarClass .User.Name}}">{{initials .User.Name}}</span>{{end}}
     </span>
     <form method="post" action="/profile/photo" enctype="multipart/form-data" class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
       <input type="hidden" name="_csrf" value="{{.CSRF}}">
@@ -90,7 +93,14 @@
 </div>
 {{end}}
 
-<div class="card mt-4 space-y-4 p-6">
+{{end}}
+
+{{if eq .Data.Tab "security"}}
+<div class="mb-6">
+  <h2 class="page-title">{{t "Two-factor & passkeys"}}</h2>
+  <p class="mt-1 text-sm text-muted">{{t "A second step at sign-in protects your account if your password leaks."}}</p>
+</div>
+<div class="card space-y-4 p-6">
   <div>
     <h2 class="text-sm font-semibold">{{t "Two-factor authentication"}}</h2>
     <p class="mt-1 text-xs text-muted">{{t "A time-based code from an authenticator app, required at each sign-in."}}</p>
@@ -159,8 +169,14 @@
 </div>
 {{end}}
 
+{{end}}
+
+{{if eq .Data.Tab "password"}}
+<div class="mb-6">
+  <h2 class="page-title">{{t "Password"}}</h2>
+</div>
 {{if .Data.CanChangePW}}
-<div class="mt-4 space-y-4">
+<div class="space-y-4">
   {{if .Data.PWSuccess}}<div data-flash="{{t "Your password has been changed."}}" data-variant="success" hidden></div>{{end}}
   {{if .Data.PWError}}<div class="alert-danger" role="alert">{{.Data.PWError}}</div>{{end}}
 
@@ -210,5 +226,8 @@
     </div>
   </form>
 </div>
+{{else}}
+<div class="card p-6 text-sm text-muted">{{t "Your password is managed by the directory or identity provider you sign in with."}}</div>
+{{end}}
 {{end}}
 {{end}}

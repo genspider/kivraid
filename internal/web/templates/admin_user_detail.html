@@ -1,14 +1,14 @@
 {{define "content"}}
-<a href="/admin/users" class="back-link"><svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>{{t "Users"}}</a>
+<a href="/admin/users" class="back-link">{{icon "chevron-left" "size-4"}}{{t "Users"}}</a>
 <div class="mb-8 flex flex-wrap items-center gap-4">
   {{if .Data.Target.PhotoMime}}
   <img class="size-14 shrink-0 rounded-full object-cover" src="/avatar/{{.Data.Target.ID}}" alt="">
   {{else}}
-  <span class="avatar-lg">{{initials .Data.Target.Name}}</span>
+  <span class="avatar-lg {{avatarClass .Data.Target.Name}}">{{initials .Data.Target.Name}}</span>
   {{end}}
   <div class="min-w-0">
     <div class="flex items-center gap-2">
-      <h1 class="truncate text-2xl font-semibold tracking-tight">{{.Data.Target.Name}}</h1>
+      <h2 class="truncate page-title">{{.Data.Target.Name}}</h2>
       {{if or .Data.Target.IsAdmin .Data.AdminGroups}}<span class="badge-accent">Admin</span>{{end}}
       {{if not .Data.Target.Active}}<span class="badge">{{t "Deactivated"}}</span>{{end}}
       {{if .Data.IsLDAP}}<span class="badge">{{if .Data.SourceName}}{{.Data.SourceName}}{{else}}LDAP{{end}}</span>{{else if eq .Data.Target.Source "upstream"}}<span class="badge">{{t "Federated"}}</span>{{else}}<span class="badge">{{t "Local"}}</span>{{end}}
@@ -222,7 +222,7 @@
       {{range .Data.Sessions}}
       <div class="flex items-center gap-4 py-3">
         <span class="btn-icon pointer-events-none border border-line">
-          <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          {{icon "monitor" "size-[18px]"}}
         </span>
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">

@@ -6,7 +6,6 @@
   <meta name="csrf-token" content="{{.CSRF}}">
   <title>{{t .Title}} · {{brandName}}</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{asset "app.css"}}">
   <script src="{{asset "app.js"}}"></script>
 </head>
@@ -20,105 +19,118 @@
     </form>
   </div>
   {{end}}
-  <header class="sticky top-0 z-10 border-b border-line bg-bg/85 backdrop-blur">
-    <div class="mx-auto flex h-14 w-full max-w-3xl items-center justify-between gap-4 px-4 sm:px-6">
-      <div class="flex min-w-0 items-center gap-5">
-        <a href="/" class="flex shrink-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight">
-          {{if brandHasLogo}}<img src="{{brandLogoURL}}" alt="" class="size-6 shrink-0 rounded-md object-contain">{{else}}{{template "logo" 24}}{{end}}
-          <span class="hidden sm:inline">{{brandName}}</span>
-        </a>
-        <nav class="hidden items-center gap-1 sm:flex">
-          <a href="/" class="nav-link {{if eq .Active "home"}}nav-active{{end}}" {{if eq .Active "home"}}aria-current="page"{{end}}>{{t "Home"}}</a>
-          <a href="/profile" class="nav-link {{if eq .Active "profile"}}nav-active{{end}}" {{if eq .Active "profile"}}aria-current="page"{{end}}>{{t "Profile"}}</a>
-          <a href="/sessions" class="nav-link {{if eq .Active "sessions"}}nav-active{{end}}" {{if eq .Active "sessions"}}aria-current="page"{{end}}>{{t "Sessions"}}</a>
-        </nav>
-      </div>
+  <header class="sticky top-0 z-20 flex h-14 items-center gap-2 bg-brand px-4 text-white" style="box-shadow: inset 0 -1px 0 rgb(255 255 255 / 8%)">
+    <a href="/" class="mr-3 flex shrink-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight text-white">
+      {{if brandHasLogo}}<img src="{{brandLogoURL}}" alt="" class="size-7 shrink-0 rounded-md object-contain">{{else}}{{template "logo" 28}}{{end}}
+      <span class="hidden sm:inline">{{brandName}}</span>
+    </a>
+    <nav class="flex min-w-0 items-center gap-1" aria-label="{{t "Main"}}">
+      <a href="/" class="nav-link {{if eq .Active "home"}}nav-active{{end}}" {{if eq .Active "home"}}aria-current="page"{{end}}>{{t "Home"}}</a>
+    </nav>
 
-      <div class="flex shrink-0 items-center gap-1.5">
-        {{if .User.IsAdmin}}
-        <div class="relative" data-menu>
-          <button type="button" data-menu-button aria-haspopup="menu" aria-expanded="false"
-                  class="nav-link flex items-center gap-1 {{if or (eq .Active "dashboard") (eq .Active "apps") (eq .Active "ldap") (eq .Active "providers") (eq .Active "routing") (eq .Active "users") (eq .Active "groups") (eq .Active "audit") (eq .Active "branding") (eq .Active "email") (eq .Active "system") (eq .Active "security")}}nav-active{{end}}">
-            {{t "Admin"}}
-            <svg class="size-3.5 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <div class="menu-panel">
-            <a href="/admin" class="menu-item {{if eq .Active "dashboard"}}bg-raised{{end}}">{{t "Overview"}}</a>
-            <div class="menu-divider"></div>
-            <a href="/admin/applications" class="menu-item {{if eq .Active "apps"}}bg-raised{{end}}">{{t "Applications"}}</a>
-            <a href="/admin/ldap" class="menu-item {{if eq .Active "ldap"}}bg-raised{{end}}">{{t "Directories"}}</a>
-            <a href="/admin/providers" class="menu-item {{if or (eq .Active "providers") (eq .Active "routing")}}bg-raised{{end}}">{{t "Federation"}}</a>
-            <a href="/admin/users" class="menu-item {{if eq .Active "users"}}bg-raised{{end}}">{{t "Users"}}</a>
-            <a href="/admin/groups" class="menu-item {{if eq .Active "groups"}}bg-raised{{end}}">{{t "Groups"}}</a>
-            <div class="menu-divider"></div>
-            <a href="/admin/audit" class="menu-item {{if eq .Active "audit"}}bg-raised{{end}}">{{t "Activity"}}</a>
-            <a href="/admin/settings" class="menu-item {{if or (eq .Active "branding") (eq .Active "email") (eq .Active "system") (eq .Active "security")}}bg-raised{{end}}">{{t "Settings"}}</a>
+    <div class="ml-auto flex shrink-0 items-center gap-1">
+      {{if .User.IsAdmin}}
+      <a href="/admin" class="nav-icon {{if eq (navSection .Active) "admin"}}nav-active{{end}}" title="{{t "Administration"}}" aria-label="{{t "Administration"}}">{{icon "settings" "size-5"}}</a>
+      {{end}}
+      <div class="relative ml-1" data-menu>
+        <button type="button" data-menu-button aria-haspopup="menu" aria-expanded="false" class="flex cursor-pointer items-center rounded-full p-0.5 ring-white/0 transition hover:ring-2 hover:ring-white/40" aria-label="{{t "Account menu"}}">
+          {{if .User.PhotoMime}}
+          <img class="size-8 rounded-full object-cover" src="/avatar/{{.User.ID}}" alt="">
+          {{else}}
+          <span class="avatar {{avatarClass .User.Name}} ring-2 ring-white/30 {{avatarClass .User.Name}}">{{initials .User.Name}}</span>
+          {{end}}
+        </button>
+        <div class="menu-panel" role="menu">
+          <div class="px-4 py-2">
+            <div class="truncate text-sm font-semibold">{{.User.Name}}</div>
+            <div class="truncate text-xs text-faint">{{.User.Username}}{{with .User.Email}} · {{.}}{{end}}</div>
           </div>
-        </div>
-        {{end}}
-
-        <div class="relative" data-menu>
-          <button type="button" data-menu-button aria-haspopup="menu" aria-expanded="false" class="flex cursor-pointer items-center gap-2 rounded-lg p-1 pr-1.5 transition-colors hover:bg-raised" aria-label="{{t "Account menu"}}">
-            {{if .User.PhotoMime}}
-            <img class="size-8 rounded-full object-cover" src="/avatar/{{.User.ID}}" alt="">
-            {{else}}
-            <span class="avatar">{{initials .User.Name}}</span>
-            {{end}}
-            <svg class="size-3.5 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <div class="menu-panel">
-            <div class="px-3 py-2">
-              <div class="truncate text-sm font-medium">{{.User.Name}}</div>
-              <div class="truncate text-xs text-muted">{{.User.Email}}</div>
+          <div class="menu-divider"></div>
+          <a href="/profile" class="menu-item" role="menuitem">{{icon "user"}} {{t "Account settings"}}</a>
+          <a href="/sessions" class="menu-item" role="menuitem">{{icon "monitor"}} {{t "Sessions"}}</a>
+          <div class="menu-divider"></div>
+          <div class="flex items-center justify-between gap-3 px-4 py-1.5">
+            <span class="text-sm">{{t "Theme"}}</span>
+            <div class="theme-seg" role="radiogroup" aria-label="{{t "Theme"}}">
+              <button type="button" class="theme-seg-btn" data-theme-set="system" role="radio" aria-checked="false" title="{{t "System"}}" aria-label="{{t "System"}}">{{icon "monitor"}}</button>
+              <button type="button" class="theme-seg-btn" data-theme-set="light" role="radio" aria-checked="false" title="{{t "Light"}}" aria-label="{{t "Light"}}">{{icon "sun"}}</button>
+              <button type="button" class="theme-seg-btn" data-theme-set="dark" role="radio" aria-checked="false" title="{{t "Dark"}}" aria-label="{{t "Dark"}}">{{icon "moon"}}</button>
             </div>
-            <div class="menu-divider"></div>
-            <div class="sm:hidden">
-              <a href="/" class="menu-item {{if eq .Active "home"}}bg-raised{{end}}">{{t "Home"}}</a>
-              <a href="/profile" class="menu-item {{if eq .Active "profile"}}bg-raised{{end}}">{{t "Profile"}}</a>
-              <a href="/sessions" class="menu-item {{if eq .Active "sessions"}}bg-raised{{end}}">{{t "Sessions"}}</a>
-              <div class="menu-divider"></div>
-            </div>
-            <div class="px-2 py-1.5">
-              <div class="mb-1.5 px-1 text-[11px] font-medium uppercase tracking-wide text-faint">{{t "Theme"}}</div>
-              <div class="theme-seg" role="radiogroup" aria-label="{{t "Theme"}}">
-                <button type="button" class="theme-seg-btn" data-theme-set="system" role="radio" aria-checked="false">
-                  <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                  {{t "System"}}
-                </button>
-                <button type="button" class="theme-seg-btn" data-theme-set="light" role="radio" aria-checked="false">
-                  <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-                  {{t "Light"}}
-                </button>
-                <button type="button" class="theme-seg-btn" data-theme-set="dark" role="radio" aria-checked="false">
-                  <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-                  {{t "Dark"}}
-                </button>
-              </div>
-            </div>
-            <div class="px-2 pb-1.5">
-              <div class="mb-1.5 px-1 text-[11px] font-medium uppercase tracking-wide text-faint">{{t "Language"}}</div>
-              <div class="theme-seg">
-                {{range languages}}<a href="/lang?set={{.Code}}" lang="{{.Code}}" class="theme-seg-btn {{if eq .Code lang}}theme-seg-active{{end}}" {{if eq .Code lang}}aria-current="true"{{end}}>{{.Name}}</a>{{end}}
-              </div>
-            </div>
-            <div class="menu-divider"></div>
-            <form method="post" action="/logout">
-              <input type="hidden" name="_csrf" value="{{.CSRF}}">
-              <button type="submit" class="menu-item">
-                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-                {{t "Sign out"}}
-              </button>
-            </form>
           </div>
+          <div class="flex items-center justify-between gap-3 px-4 py-1.5">
+            <span class="text-sm">{{t "Language"}}</span>
+            <div class="theme-seg">
+              {{range languages}}<a href="/lang?set={{.Code}}" lang="{{.Code}}" title="{{.Name}}" class="theme-seg-btn uppercase {{if eq .Code lang}}theme-seg-active{{end}}" {{if eq .Code lang}}aria-current="true"{{end}}>{{.Code}}</a>{{end}}
+            </div>
+          </div>
+          <div class="menu-divider"></div>
+          <form method="post" action="/logout">
+            <input type="hidden" name="_csrf" value="{{.CSRF}}">
+            <button type="submit" class="menu-item" role="menuitem">{{icon "sign-out"}} {{t "Sign out"}}</button>
+          </form>
+          {{with version}}<div class="mt-1 border-t border-line-soft px-4 pt-2 pb-1 text-[11px] text-faint">{{brandName}} <span class="font-mono">{{.}}</span></div>{{end}}
         </div>
       </div>
     </div>
   </header>
-  <main class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-    {{block "content" .}}{{end}}
+
+  {{$section := navSection .Active}}
+  {{if eq $section "admin"}}
+  <div class="px-4 py-6 md:px-6 xl:px-10">
+    <h1 class="page-heading mb-6">{{t "Administration"}}</h1>
+    <div class="flex flex-col gap-4 md:flex-row md:gap-6 xl:gap-10">
+      {{template "adminnav" .}}
+      <main class="min-w-0 max-w-5xl flex-1">{{block "content" .}}{{end}}</main>
+    </div>
+  </div>
+  {{else if eq $section "account"}}
+  <div class="px-4 py-6 md:px-6 xl:px-10">
+    <h1 class="page-heading mb-6">{{t "Account settings"}}</h1>
+    <div class="flex flex-col gap-4 md:flex-row md:gap-6 xl:gap-10">
+      {{template "accountnav" .}}
+      <main class="min-w-0 max-w-3xl flex-1">{{template "content" .}}</main>
+    </div>
+  </div>
+  {{else}}
+  <main class="mx-auto w-full max-w-5xl px-4 py-6 md:px-10">
+    {{template "content" .}}
   </main>
+  {{end}}
 </body>
 </html>
+
+{{define "adminnav"}}
+{{$a := .Active}}
+<nav class="sidenav" aria-label="{{t "Administration"}}" data-sidenav>
+  <a href="/admin" class="sidenav-link {{if eq $a "dashboard"}}sidenav-active{{end}}">{{t "Overview"}}</a>
+  <h4 class="sidenav-title">{{t "Applications"}}</h4>
+  <a href="/admin/applications" class="sidenav-link {{if eq $a "apps"}}sidenav-active{{end}}">{{t "Applications"}}</a>
+  <h4 class="sidenav-title">{{t "Accounts"}}</h4>
+  <a href="/admin/users" class="sidenav-link {{if eq $a "users"}}sidenav-active{{end}}">{{t "Users"}}</a>
+  <a href="/admin/groups" class="sidenav-link {{if eq $a "groups"}}sidenav-active{{end}}">{{t "Groups"}}</a>
+  <h4 class="sidenav-title">{{t "Identity sources"}}</h4>
+  <a href="/admin/ldap" class="sidenav-link {{if eq $a "ldap"}}sidenav-active{{end}}">{{t "Directories"}}</a>
+  <a href="/admin/providers" class="sidenav-link {{if eq $a "providers"}}sidenav-active{{end}}">{{t "Providers"}}</a>
+  <a href="/admin/routing" class="sidenav-link {{if eq $a "routing"}}sidenav-active{{end}}">{{t "Login routing"}}</a>
+  <h4 class="sidenav-title">{{t "Settings"}}</h4>
+  <a href="/admin/settings/branding" class="sidenav-link {{if eq $a "branding"}}sidenav-active{{end}}">{{t "Branding"}}</a>
+  <a href="/admin/settings/email" class="sidenav-link {{if eq $a "email"}}sidenav-active{{end}}">{{t "Email"}}</a>
+  <a href="/admin/settings/security" class="sidenav-link {{if eq $a "security"}}sidenav-active{{end}}">{{t "Security"}}</a>
+  <h4 class="sidenav-title">{{t "System"}}</h4>
+  <a href="/admin/settings/system" class="sidenav-link {{if eq $a "system"}}sidenav-active{{end}}">{{t "Diagnostics"}}</a>
+  <a href="/admin/audit" class="sidenav-link {{if eq $a "audit"}}sidenav-active{{end}}">{{t "Activity"}}</a>
+</nav>
+{{end}}
+
+{{define "accountnav"}}
+{{$a := .Active}}
+<nav class="sidenav" aria-label="{{t "Account settings"}}" data-sidenav>
+  <a href="/profile" class="sidenav-link {{if eq $a "profile"}}sidenav-active{{end}}">{{t "Profile"}}</a>
+  <a href="/profile/password" class="sidenav-link {{if eq $a "password"}}sidenav-active{{end}}">{{t "Password"}}</a>
+  <a href="/profile/security" class="sidenav-link {{if eq $a "security-account"}}sidenav-active{{end}}">{{t "Two-factor & passkeys"}}</a>
+  <a href="/sessions" class="sidenav-link {{if eq $a "sessions"}}sidenav-active{{end}}">{{t "Sessions"}}</a>
+</nav>
+{{end}}
 
 {{define "iconcard"}}
 <div class="card space-y-4 p-6">
@@ -240,32 +252,19 @@
 </div>
 {{end}}
 
+{{/* Section titles of the federation and settings pages, whose sections
+   are now entries of the admin side menu. */}}
 {{define "federationtabs"}}
-<div class="mb-8">
-  <h1 class="text-2xl font-semibold tracking-tight">{{t "Federation"}}</h1>
-  <nav class="mt-5 flex gap-1 overflow-x-auto border-b border-line" aria-label="{{t "Federation sections"}}">
-    <a href="/admin/providers" class="tab {{if eq .Active "providers"}}tab-active{{end}}" {{if eq .Active "providers"}}aria-current="page"{{end}}>{{t "Providers"}}</a>
-    <a href="/admin/routing" class="tab {{if eq .Active "routing"}}tab-active{{end}}" {{if eq .Active "routing"}}aria-current="page"{{end}}>{{t "Routing"}}</a>
-  </nav>
-</div>
+<h2 class="page-title mb-2">{{if eq .Active "routing"}}{{t "Login routing"}}{{else}}{{t "Providers"}}{{end}}</h2>
 {{end}}
-
 {{define "settingstabs"}}
-<div class="mb-8">
-  <h1 class="text-2xl font-semibold tracking-tight">{{t "Settings"}}</h1>
-  <nav class="mt-5 flex gap-1 overflow-x-auto border-b border-line" aria-label="{{t "Settings sections"}}">
-    <a href="/admin/settings/system" class="tab {{if eq .Active "system"}}tab-active{{end}}" {{if eq .Active "system"}}aria-current="page"{{end}}>{{t "System"}}</a>
-    <a href="/admin/settings/branding" class="tab {{if eq .Active "branding"}}tab-active{{end}}" {{if eq .Active "branding"}}aria-current="page"{{end}}>{{t "Branding"}}</a>
-    <a href="/admin/settings/email" class="tab {{if eq .Active "email"}}tab-active{{end}}" {{if eq .Active "email"}}aria-current="page"{{end}}>{{t "Email"}}</a>
-    <a href="/admin/settings/security" class="tab {{if eq .Active "security"}}tab-active{{end}}" {{if eq .Active "security"}}aria-current="page"{{end}}>{{t "Security"}}</a>
-  </nav>
-</div>
+<h2 class="page-title mb-2">{{if eq .Active "branding"}}{{t "Branding"}}{{else if eq .Active "email"}}{{t "Email"}}{{else if eq .Active "security"}}{{t "Security"}}{{else}}{{t "Diagnostics"}}{{end}}</h2>
 {{end}}
 
 {{define "logo"}}
 <svg width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true">
-  <rect width="24" height="24" rx="7" class="fill-accent"/>
-  <circle cx="12" cy="10" r="3" fill="var(--on-accent)"/>
-  <path d="M10 11.4 H14 L13 17.4 H11 Z" fill="var(--on-accent)"/>
+  <rect width="24" height="24" rx="7" class="fill-logo"/>
+  <circle cx="12" cy="10" r="3" fill="#fff"/>
+  <path d="M10 11.4 H14 L13 17.4 H11 Z" fill="#fff"/>
 </svg>
 {{end}}

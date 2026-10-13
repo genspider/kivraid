@@ -1,7 +1,7 @@
 {{define "content"}}
-<a href="/admin/ldap" class="back-link"><svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>{{t "Directories"}}</a>
+<a href="/admin/ldap" class="back-link">{{icon "chevron-left" "size-4"}}{{t "Directories"}}</a>
 <div class="mb-8">
-  <h1 class="text-2xl font-semibold tracking-tight">{{if .Data.IsNew}}{{t "New directory"}}{{else}}{{.Data.Form.Name}}{{end}}</h1>
+  <h2 class="page-title">{{if .Data.IsNew}}{{t "New directory"}}{{else}}{{.Data.Form.Name}}{{end}}</h2>
   <p class="mt-1 text-sm text-muted">{{t "LDAP user source — tested with OpenLDAP and LLDAP; other LDAPv3 directories such as Active Directory work with matching filters."}}</p>
 </div>
 

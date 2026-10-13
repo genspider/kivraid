@@ -104,7 +104,7 @@ func (s *Server) handleProfilePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	s.audit.Record(r.Context(), user.Username, audit.ActionPasswordChange, "", "source="+user.Source, s.clientIP(r))
 	s.log.Info("password changed", "user", user.Username, "source", user.Source)
-	http.Redirect(w, r, "/profile?pw=1", http.StatusSeeOther)
+	http.Redirect(w, r, "/profile/password?pw=1", http.StatusSeeOther)
 }
 
 // --- Sessions --------------------------------------------------------------

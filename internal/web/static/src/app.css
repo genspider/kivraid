@@ -14,11 +14,91 @@
  * Design tokens. The whole skin is defined here: light values on :root,
  * dark overrides on [data-theme=dark]. Semantic names only — templates
  * never reference raw colors.
+ *
+ * The application shares codehearth's palette (a softened Atlassian scale:
+ * slate neutrals, a blue accent, a solid blue top bar), so the two products
+ * look like one family. The sign-in pages keep Kivraid's own violet skin
+ * and Inter: see .auth-theme below.
  */
-/* Accent hue: violet (~293) for a distinct identity; neutrals carry a
- * faint tint of it so the greys read cool and cohesive rather than flat. */
 :root {
   color-scheme: light;
+  /* Chart series (validated for CVD separation on both surfaces). */
+  --chart-ok: rgb(44 99 206);
+  --chart-fail: rgb(201 69 58);
+
+  --bg: rgb(255 255 255);
+  --surface: rgb(255 255 255);
+  --raised: rgb(246 247 249);
+  --sunken: rgb(252 252 253);
+  --line: rgb(227 230 236);
+  --line-soft: rgb(239 241 244);
+  --line-strong: rgb(205 210 220);
+  --fg: rgb(29 41 57);
+  --muted: rgb(71 84 103);
+  --faint: rgb(102 112 133);
+  --accent: rgb(44 99 206);
+  --accent-hover: rgb(58 111 214);
+  --accent-soft: rgb(238 243 253);
+  --on-accent: rgb(255 255 255);
+  --danger: rgb(201 69 58);
+  --danger-hover: rgb(168 54 45);
+  --danger-soft: rgb(253 239 236);
+  --warn: rgb(143 100 22);
+  --warn-soft: rgb(253 246 233);
+  --success: rgb(28 100 70);
+  --success-soft: rgb(233 247 241);
+  --ring: rgb(44 99 206 / 22%);
+  /* The top bar: codehearth's brand blue, white text. */
+  --brand: rgb(34 78 158);
+  --brand-deep: rgb(23 53 107);
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 6px 16px -4px rgba(16, 24, 40, 0.12), 0 0 0 1px rgba(16, 24, 40, 0.05);
+  --shadow-lg: 0 0 0 1px rgba(16, 24, 40, 0.04), 0 16px 40px -12px rgba(16, 24, 40, 0.22);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --chart-ok: rgb(107 151 236);
+  --chart-fail: rgb(235 122 111);
+
+  --bg: rgb(21 24 30);
+  --surface: rgb(25 28 35);
+  --raised: rgb(36 41 51);
+  --sunken: rgb(30 34 42);
+  --line: rgb(45 51 62);
+  --line-soft: rgb(36 41 51);
+  --line-strong: rgb(58 65 78);
+  --fg: rgb(228 231 236);
+  --muted: rgb(179 186 198);
+  --faint: rgb(143 152 168);
+  --accent: rgb(107 151 236);
+  --accent-hover: rgb(130 169 240);
+  --accent-soft: rgb(26 39 64);
+  --on-accent: rgb(255 255 255);
+  --danger: rgb(235 122 111);
+  --danger-hover: rgb(242 154 144);
+  --danger-soft: rgb(51 25 26);
+  --warn: rgb(240 192 96);
+  --warn-soft: rgb(46 37 18);
+  --success: rgb(134 214 177);
+  --success-soft: rgb(21 41 31);
+  --ring: rgb(107 151 236 / 35%);
+  --brand: rgb(24 38 66);
+  --brand-deep: rgb(15 24 44);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-md: 0 8px 20px -4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.09);
+  --shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 16px 40px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* The sign-in pages (body.auth-theme) keep Kivraid's own skin: violet
+ * accent, violet-tinted neutrals and Inter. */
+.auth-theme {
+  --font-ui: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
   /* Chart series (validated for CVD separation on both surfaces). */
   --chart-ok: oklch(52% 0.25 293);
   --chart-fail: oklch(57.7% 0.245 27.3);
@@ -48,8 +128,8 @@
   --shadow-lg: 0 14px 36px oklch(25% 0.05 293 / 15%), 0 4px 10px oklch(25% 0.04 293 / 8%);
 }
 
-[data-theme="dark"] {
-  color-scheme: dark;
+[data-theme="dark"] .auth-theme {
+
   --chart-ok: oklch(65% 0.19 293);
   --chart-fail: oklch(64% 0.2 25);
 
@@ -78,6 +158,12 @@
   --shadow-lg: 0 16px 40px oklch(0% 0 0 / 55%);
 }
 
+/* The UI font: the platform's own, like codehearth. */
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans",
+    "Helvetica Neue", sans-serif;
+}
+
 @theme inline {
   --color-*: initial;
   --color-white: #fff;
@@ -99,13 +185,21 @@
   --color-danger-soft: var(--danger-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-sunken: var(--sunken);
+  --color-line-soft: var(--line-soft);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
 
   --shadow-xs: var(--shadow-sm);
   --shadow-sm: var(--shadow);
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
 
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  /* codehearth's system font stack; the sign-in pages swap in Inter
+   * through --font-ui (see .auth-theme). */
+  --font-sans: var(--font-ui);
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
 }
 
@@ -118,6 +212,8 @@
 
   body {
     @apply bg-bg font-sans text-fg antialiased;
+  }
+  .auth-theme {
     font-feature-settings: "cv05", "ss01";
   }
 
@@ -187,8 +283,8 @@
 
 @layer components {
   .card {
-    @apply rounded-xl border border-line bg-surface;
-    box-shadow: var(--shadow-sm);
+    @apply rounded-xl border border-line-soft bg-surface;
+    box-shadow: var(--shadow);
   }
 
   /* Buttons ---------------------------------------------------------------- */
@@ -198,7 +294,7 @@
   .btn-ghost,
   .btn-danger,
   .btn-danger-soft {
-    @apply inline-flex h-9 cursor-pointer select-none items-center justify-center gap-2 rounded-lg px-3.5 text-sm font-medium;
+    @apply inline-flex h-8 cursor-pointer select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-sm leading-none font-medium;
     transition:
       background-color 0.15s,
       border-color 0.15s,
@@ -228,11 +324,11 @@
     box-shadow: var(--shadow-sm);
   }
   .btn-secondary {
-    @apply border border-line bg-surface text-fg hover:border-line-strong hover:bg-raised;
+    @apply border border-line bg-surface text-muted hover:border-line-strong hover:bg-raised;
     box-shadow: var(--shadow-sm);
   }
   .btn-ghost {
-    @apply text-muted hover:bg-raised hover:text-fg;
+    @apply text-muted hover:bg-raised;
   }
   .btn-danger {
     @apply bg-danger text-on-accent hover:bg-danger-hover;
@@ -243,7 +339,7 @@
   }
 
   .btn-icon {
-    @apply inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-muted;
+    @apply inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted;
     transition:
       background-color 0.15s,
       color 0.15s,
@@ -257,19 +353,54 @@
   }
 
   /* Navigation ------------------------------------------------------------- */
+  /* Top bar links and icon buttons, white on the brand blue. */
   .nav-link {
-    @apply cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-muted transition-colors duration-150 hover:bg-raised hover:text-fg;
+    @apply inline-flex h-8 cursor-pointer items-center gap-1 rounded-md px-2 text-sm font-medium text-white/85 transition-colors duration-150 hover:bg-white/15 hover:text-white;
   }
   .nav-active {
-    @apply bg-raised text-fg;
+    @apply bg-white/20 text-white;
+  }
+  .nav-icon {
+    @apply inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-white/85 transition-colors duration-150 hover:bg-white/15 hover:text-white;
+  }
+
+  /* The Kivraid mark: codehearth's blue everywhere, sign-in pages included
+   * (the favicon, docs/img/logo.svg and the emails use the same #2c63ce). */
+  .fill-logo {
+    fill: #2c63ce;
+  }
+
+  /* Page heading of a section shell (Administration, Account settings) and
+   * the title of a page inside it, codehearth's h1/h2 sizes. */
+  .page-heading {
+    @apply text-2xl font-medium tracking-tight text-fg;
+  }
+  .page-title {
+    @apply text-xl font-medium text-fg;
+  }
+
+  /* Side menu of the admin and account shells; on a phone it becomes a
+   * horizontally scrolling strip above the content. */
+  .sidenav {
+    @apply -mx-4 flex shrink-0 gap-1 overflow-x-auto px-4 pb-1 md:mx-0 md:block md:w-52 md:overflow-visible md:p-0 xl:w-60;
+  }
+  .sidenav-title {
+    @apply hidden px-2 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wide text-muted md:block;
+  }
+  .sidenav-link {
+    @apply flex h-8 shrink-0 items-center whitespace-nowrap rounded-md px-2 text-sm font-medium text-muted transition-colors hover:bg-raised;
+  }
+  .sidenav-active,
+  .sidenav-active:hover {
+    @apply bg-accent-soft text-accent;
   }
 
   /* Segmented theme control (System / Light / Dark) in the account menu. */
   .theme-seg {
-    @apply flex gap-0.5 rounded-lg border border-line bg-raised p-0.5;
+    @apply flex gap-0.5 rounded-md bg-raised p-0.5;
   }
   .theme-seg-btn {
-    @apply flex flex-1 cursor-pointer flex-col items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium text-muted transition-colors duration-100 hover:text-fg;
+    @apply flex h-6 min-w-7 cursor-pointer items-center justify-center rounded px-1.5 text-[11px] font-semibold text-muted transition-colors duration-100 hover:text-fg;
   }
   .theme-seg-active {
     @apply bg-surface text-fg;
@@ -286,7 +417,7 @@
 
   /* Dropdown menus (toggled by app.js on [data-menu] containers). */
   .menu-panel {
-    @apply invisible absolute right-0 top-full z-30 mt-2 w-56 origin-top-right scale-95 rounded-xl border border-line bg-surface p-1 opacity-0;
+    @apply invisible absolute right-0 top-full z-30 mt-2 w-64 origin-top-right scale-95 rounded-lg bg-surface py-1 text-fg opacity-0;
     box-shadow: var(--shadow-lg);
     transition:
       opacity 0.12s ease,
@@ -297,10 +428,13 @@
     @apply visible scale-100 opacity-100;
   }
   .menu-item {
-    @apply flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-fg transition-colors duration-100 hover:bg-raised;
+    @apply mx-1 flex w-[calc(100%-0.5rem)] cursor-pointer items-center gap-2.5 rounded-md px-3 py-1.5 text-left text-sm text-fg transition-colors duration-100 hover:bg-raised;
+  }
+  .menu-item svg {
+    @apply text-faint;
   }
   .menu-divider {
-    @apply mx-1 my-1 h-px bg-line;
+    @apply my-1 h-px bg-line-soft;
   }
 
   /* Click-to-insert example values next to form fields. */
@@ -310,20 +444,19 @@
 
   /* Form controls ---------------------------------------------------------- */
   .label {
-    @apply mb-1.5 block text-[13px] font-medium text-fg;
+    @apply mb-1.5 block text-xs font-semibold text-muted;
   }
   .input,
   .textarea,
   .select {
-    @apply w-full rounded-lg border border-line bg-surface text-sm text-fg placeholder:text-faint;
-    box-shadow: var(--shadow-sm);
+    @apply w-full rounded-md border border-line bg-sunken text-sm text-fg placeholder:text-faint;
     transition:
       border-color 0.15s,
       box-shadow 0.15s;
   }
   .input,
   .select {
-    @apply h-9 px-3;
+    @apply h-8 px-2.5;
   }
   .textarea {
     @apply px-3 py-2;
@@ -331,13 +464,14 @@
   .input:hover,
   .textarea:hover,
   .select:hover {
-    @apply border-line-strong;
+    @apply border-line-strong bg-raised;
   }
   .input:focus,
   .textarea:focus,
   .select:focus {
     outline: none;
     border-color: var(--accent);
+    background-color: var(--surface);
     box-shadow: 0 0 0 3px var(--ring);
   }
   .select {
@@ -347,11 +481,16 @@
   }
 
   /* Badges & alerts -------------------------------------------------------- */
+  /* Lozenges, codehearth-style: small, uppercase, pill-shaped. */
+  .badge,
+  .badge-accent {
+    @apply inline-flex h-5 max-w-[200px] items-center truncate rounded-full px-2 align-middle text-[11px] font-semibold uppercase leading-5 tracking-wide;
+  }
   .badge {
-    @apply inline-flex items-center rounded-md border border-line bg-raised px-2 py-0.5 text-xs font-medium text-muted;
+    @apply bg-raised text-muted;
   }
   .badge-accent {
-    @apply inline-flex items-center rounded-md border border-transparent bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent;
+    @apply bg-accent-soft text-accent;
   }
   /* Page header: title + description, with actions beside it on wide
    * screens and stacked below it on phones. */
@@ -412,26 +551,33 @@
 
   /* Activity badges: failures in red, sensitive changes in amber. */
   .badge-tone {
-    @apply inline-flex items-center whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium;
+    @apply inline-flex h-5 items-center whitespace-nowrap rounded-full px-2 text-[11px] font-semibold uppercase leading-5 tracking-wide;
   }
   .tone-plain {
-    @apply border-line bg-raised text-muted;
+    @apply bg-raised text-muted;
   }
   .tone-danger {
-    @apply border-danger/25 bg-danger-soft text-danger;
+    @apply bg-danger-soft text-danger;
   }
   .tone-warn {
-    @apply border-warn/30 bg-warn-soft text-warn;
+    @apply bg-warn-soft text-warn;
   }
 
+  /* Section messages, codehearth-style: a tinted panel, readable text. */
   .alert-danger {
-    @apply rounded-lg border border-danger/25 bg-danger-soft px-3.5 py-2.5 text-sm text-danger;
+    @apply rounded-md border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-fg;
   }
   .alert-success {
-    @apply rounded-lg border border-accent/25 bg-accent-soft px-3.5 py-2.5 text-sm text-accent;
+    @apply rounded-md border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-fg;
   }
   .alert-warning {
-    @apply rounded-lg border border-warn/30 bg-warn-soft px-3.5 py-2.5 text-sm text-warn;
+    @apply rounded-md border border-warn/40 bg-warn-soft px-4 py-3 text-sm text-fg;
+  }
+  .auth-theme .alert-danger {
+    @apply text-danger;
+  }
+  .auth-theme .alert-success {
+    @apply text-accent;
   }
 
   /* LDAP form: warn while certificate verification is turned off. */
@@ -480,23 +626,34 @@
   .table {
     @apply w-full text-left text-sm;
   }
+  /* Data tables, codehearth-style: an uppercase header band, 40px rows. */
   .table thead th {
-    @apply whitespace-nowrap px-4 py-2.5 text-[13px] font-medium text-muted;
+    @apply h-10 whitespace-nowrap border-b border-line bg-sunken px-3 text-[11px] font-semibold uppercase tracking-wide text-muted;
   }
   .table tbody tr {
-    @apply border-t border-line transition-colors hover:bg-raised;
+    @apply border-t border-line-soft transition-colors hover:bg-raised;
+  }
+  .table tbody tr:first-child {
+    @apply border-t-0;
   }
   .table td {
-    @apply px-4 py-2.5 align-top;
+    @apply h-10 px-3 py-1.5 align-middle;
   }
 
   /* Avatars ---------------------------------------------------------------- */
+  /* Initials avatars: white on a colour picked from the name (av-0…5). */
   .avatar {
-    @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent;
+    @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white;
   }
   .avatar-lg {
-    @apply inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg font-semibold text-accent;
+    @apply inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-accent text-lg font-semibold text-white;
   }
+  .av-0 { background-color: rgb(44 99 206); }
+  .av-1 { background-color: rgb(30 128 140); }
+  .av-2 { background-color: rgb(108 92 196); }
+  .av-3 { background-color: rgb(168 54 45); }
+  .av-4 { background-color: rgb(39 128 90); }
+  .av-5 { background-color: rgb(34 78 158); }
   /* Application tile for apps without an uploaded icon: initials on one of
    * six gradients picked from the name, so it sits well beside real icons. */
   .app-tile {
@@ -569,6 +726,44 @@
   }
   [data-theme="dark"] .aurora-custom::after {
     background-image: linear-gradient(oklch(0% 0 0 / 0.45), oklch(0% 0 0 / 0.6));
+  }
+
+  /* The sign-in pages keep Kivraid's previous component shapes (taller
+   * controls, Inter, violet-tinted avatars) while the app follows
+   * codehearth. */
+  .auth-theme .btn-primary,
+  .auth-theme .btn-secondary,
+  .auth-theme .btn-ghost,
+  .auth-theme .btn-danger {
+    @apply h-9 gap-2 rounded-lg px-3.5;
+  }
+  .auth-theme .btn-secondary {
+    @apply text-fg;
+  }
+  .auth-theme .input,
+  .auth-theme .select,
+  .auth-theme .textarea {
+    @apply rounded-lg bg-surface;
+    box-shadow: var(--shadow-sm);
+  }
+  .auth-theme .input,
+  .auth-theme .select {
+    @apply h-9 px-3;
+  }
+  .auth-theme .input:hover,
+  .auth-theme .select:hover,
+  .auth-theme .textarea:hover {
+    @apply bg-surface;
+  }
+  .auth-theme .label {
+    @apply text-[13px] font-medium text-fg;
+  }
+  .auth-theme .avatar,
+  .auth-theme .avatar-lg {
+    @apply bg-accent-soft text-accent;
+  }
+  .auth-theme .avatar {
+    @apply text-xs;
   }
 
   /* Auth card: a touch more presence than a plain card. */

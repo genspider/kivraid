@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="{{asset "app.css"}}">
   <script src="{{asset "app.js"}}"></script>
 </head>
-<body class="min-h-dvh" data-i18n="{{jsI18n}}">
+<body class="auth-theme min-h-dvh" data-i18n="{{jsI18n}}">
   <div class="aurora{{if brandHasBackground}} aurora-custom{{end}}">{{if brandHasBackground}}<img src="{{brandBackgroundURL}}" alt="">{{end}}</div>
   {{template "authlang" .}}
   <button type="button" class="aurora-toggle" data-theme-toggle aria-label="{{t "Toggle theme"}}">
@@ -25,9 +25,9 @@
         <img src="{{brandLogoURL}}" alt="" width="40" height="40" class="size-10 rounded-xl object-contain">
         {{else}}
         <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
-          <rect width="24" height="24" rx="7" class="fill-accent"/>
-          <circle cx="12" cy="10" r="3" fill="var(--on-accent)"/>
-          <path d="M10 11.4 H14 L13 17.4 H11 Z" fill="var(--on-accent)"/>
+          <rect width="24" height="24" rx="7" class="fill-logo"/>
+          <circle cx="12" cy="10" r="3" fill="#fff"/>
+          <path d="M10 11.4 H14 L13 17.4 H11 Z" fill="#fff"/>
         </svg>
         {{end}}
         <div class="text-center">
