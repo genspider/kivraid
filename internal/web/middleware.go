@@ -184,5 +184,16 @@ func (s *Server) csrfToken(ctx context.Context) string {
 // isLocalPath reports whether next is a same-site path (no scheme, no
 // protocol-relative tricks).
 func isLocalPath(next string) bool {
-	return len(next) > 1 && next[0] == '/' && next[1] != '/' && next[1] != '\\'
+	if len(next) < 2 || next[0] != '/' || next[1] == '/' || next[1] == '\\' {
+		return false
+	}
+	// Browsers drop tabs and newlines anywhere in a URL, so "/\t/evil.com"
+	// would turn into the protocol-relative "//evil.com" once followed:
+	// refuse control characters outright.
+	for i := 0; i < len(next); i++ {
+		if next[i] < 0x20 || next[i] == 0x7f {
+			return false
+		}
+	}
+	return true
 }
