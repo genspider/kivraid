@@ -1,6 +1,7 @@
 package web
 
 import (
+	"crypto/subtle"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -9,6 +10,8 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+
+	"github.com/kivraid/kivraid/internal/session"
 )
 
 // guardAuthorize renders a branded, actionable error for the two authorize
@@ -24,6 +27,25 @@ func (s *Server) guardAuthorize(next http.Handler) http.Handler {
 				s.renderError(w, r, http.StatusBadRequest, title, msg)
 				return
 			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// guardCallback hands the authorization response (the code) only to the
+// browser session that completed the request at /oidc/resume. A request id
+// is not a secret — it appears in the login redirect — so without this
+// check an attacker could start a request, have a signed-in victim complete
+// it through a plain link to the resume page, then collect the victim's
+// code at the callback themselves.
+func (s *Server) guardCallback(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sid := s.sessions.GetString(r.Context(), session.KeySID)
+		reqSID, err := s.oidcStore.AuthRequestSessionID(r.Context(), r.FormValue("id"))
+		if err != nil || sid == "" || reqSID == "" || subtle.ConstantTimeCompare([]byte(sid), []byte(reqSID)) != 1 {
+			s.renderError(w, r, http.StatusBadRequest, s.t(r, "Sign-in not valid in this browser"),
+				s.t(r, "This sign-in was started in another browser or has expired. Go back to the application and sign in again."))
+			return
 		}
 		next.ServeHTTP(w, r)
 	})

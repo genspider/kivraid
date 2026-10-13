@@ -433,6 +433,9 @@ func (s *Server) Handler() http.Handler {
 			}
 		}
 		root.Handle("/end_session", s.sessions.LoadAndSave(http.HandlerFunc(s.handleEndSession)))
+		// The callback that issues the code needs the session, to check it
+		// is the one that completed the request (see guardCallback).
+		root.Handle("/authorize/callback", s.sessions.LoadAndSave(s.guardCallback(s.oidc)))
 	}
 	root.Handle("/", webChain)
 	return root

@@ -257,6 +257,11 @@ func (s *Storage) CompleteAuthRequest(ctx context.Context, id, userID, sid strin
 	if err != nil {
 		return err
 	}
+	// A request is completed once, by one browser session: completing it
+	// again would rebind it to whoever opened the resume link last.
+	if req.IsDone {
+		return oidc.ErrInvalidRequest().WithDescription("authorization request already completed")
+	}
 	now := time.Now().UTC()
 	req.UserID = userID
 	req.AuthTime = now
@@ -275,6 +280,21 @@ func (s *Storage) CompleteAuthRequest(ctx context.Context, id, userID, sid strin
 	return s.store.RecordOIDCSession(ctx, sqlcgen.RecordOIDCSessionParams{
 		Sid: sid, ClientID: req.ClientID, UserID: userID, CreatedAt: now,
 	})
+}
+
+// AuthRequestSessionID returns the Kivraid session (sid) that completed an
+// authorization request, or "" while it is pending. The web layer only
+// hands the authorization response to that session.
+func (s *Storage) AuthRequestSessionID(ctx context.Context, id string) (string, error) {
+	row, err := s.store.GetAuthRequestByID(ctx, id)
+	if err != nil {
+		return "", notFound(err)
+	}
+	req, err := s.authRequestFromRow(row)
+	if err != nil {
+		return "", err
+	}
+	return req.SessionID, nil
 }
 
 // sessionIDOf returns the Kivraid session a token request belongs to, or
