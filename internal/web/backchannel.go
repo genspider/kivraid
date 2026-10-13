@@ -31,13 +31,18 @@ func (s *Server) sessionSIDs(ctx context.Context) []string {
 	return sids
 }
 
-// logoutSessionApps sends back-channel logout tokens to the applications
-// the given sessions signed in to.
+// logoutSessionApps signs the given sessions out of the applications they
+// opened: back-channel logout tokens for OIDC applications, and deletion of
+// their forward-auth sessions.
 func (s *Server) logoutSessionApps(ctx context.Context, sids ...string) {
-	if s.backchannel == nil {
-		return
-	}
 	for _, sid := range sids {
-		s.backchannel.Session(ctx, sid)
+		// Forward-auth sessions on application hosts end with the Kivraid
+		// session they came from.
+		if err := s.store.DeleteForwardAuthSessionsBySID(ctx, sid); err != nil {
+			s.log.Warn("end forward-auth sessions", "err", err)
+		}
+		if s.backchannel != nil {
+			s.backchannel.Session(ctx, sid)
+		}
 	}
 }

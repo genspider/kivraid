@@ -90,7 +90,12 @@ func (s *Server) mfaRequiredFor(user sqlcgen.User) bool {
 // authenticated with more than a bare password. Sessions that predate the
 // recorded method count as password-only.
 func (s *Server) sessionHasSecondFactor(ctx context.Context) bool {
-	switch s.sessions.GetString(ctx, session.KeyLoginMethod) {
+	return isSecondFactorMethod(s.sessions.GetString(ctx, session.KeyLoginMethod))
+}
+
+// isSecondFactorMethod reports whether a login method counts as two-factor.
+func isSecondFactorMethod(method string) bool {
+	switch method {
 	case loginPasswordTOTP, loginPasskey, loginFederated:
 		return true
 	}

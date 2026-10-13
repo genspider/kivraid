@@ -8,32 +8,40 @@ import (
 	"strings"
 
 	"github.com/kivraid/kivraid/internal/audit"
-	"github.com/kivraid/kivraid/internal/session"
 	"github.com/kivraid/kivraid/internal/store/sqlcgen"
 )
 
 // handleForwardAuth is the auth_request-style endpoint for reverse
 // proxies (Traefik forwardAuth, nginx auth_request, Caddy forward_auth).
-// Authenticated requests get 200 plus identity headers the proxy can
-// copy upstream; anonymous browser requests are redirected to the login
-// page when the target host is allowlisted, 401 otherwise. When a proxy
-// application is registered for the host, its group access policy is
+// Authenticated requests get 200 plus identity headers the proxy can copy
+// upstream. A request is authenticated by Kivraid's own session cookie
+// when Kivraid shares the application's host, otherwise by the
+// application-host session obtained through the one-time code exchange
+// (see forwardauth_session.go). Anonymous browser requests for an
+// allowlisted host are sent to sign in, anything else gets 401. When a
+// proxy application is registered for the host, its group access policy is
 // enforced (403 for members who fail it).
 func (s *Server) handleForwardAuth(w http.ResponseWriter, r *http.Request) {
-	userID := s.sessions.GetString(r.Context(), session.KeyUserID)
-	if userID == "" {
-		s.forwardAuthDeny(w, r)
+	// The code exchange lands on the application's host, so the proxy
+	// sends it here like any other request to that host.
+	if uri, err := url.ParseRequestURI(r.Header.Get("X-Forwarded-Uri")); err == nil && uri.Path == forwardAuthCallbackPath {
+		s.forwardAuthCallback(w, r, uri.Query())
 		return
 	}
-	user, err := s.store.GetUserByID(r.Context(), userID)
-	if err != nil || !user.Active {
-		s.forwardAuthDeny(w, r)
+	id, ok, err := s.forwardAuthIdentity(r)
+	if err != nil {
+		s.serverError(w, r, err)
 		return
 	}
+	if !ok {
+		s.forwardAuthSignIn(w, r)
+		return
+	}
+	user := id.user
 	// A password set by an administrator must be replaced before reaching
 	// protected applications too, not only Kivraid's own pages.
-	if user.MustChangePassword && s.sessions.GetString(r.Context(), session.KeyImpersonatorName) == "" {
-		s.forwardAuthRedirect(w, r, passwordChangePath)
+	if user.MustChangePassword && !id.impersonated {
+		s.forwardAuthRequire(w, r, id, passwordChangePath)
 		return
 	}
 	// The instance two-factor policy covers protected applications as it
@@ -43,9 +51,8 @@ func (s *Server) handleForwardAuth(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	if s.mfaRequiredFor(user) && !s.sessionHasSecondFactor(r.Context()) &&
-		s.sessions.GetString(r.Context(), session.KeyImpersonatorName) == "" {
-		s.forwardAuthRedirect(w, r, mfaRequiredPath)
+	if s.mfaRequiredFor(user) && !isSecondFactorMethod(id.method) && !id.impersonated {
+		s.forwardAuthRequire(w, r, id, mfaRequiredPath)
 		return
 	}
 
@@ -65,9 +72,8 @@ func (s *Server) handleForwardAuth(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
-		if app.RequireMfa && !s.sessionHasSecondFactor(r.Context()) &&
-			s.sessions.GetString(r.Context(), session.KeyImpersonatorName) == "" {
-			s.forwardAuthRedirect(w, r, mfaRequiredPath)
+		if app.RequireMfa && !isSecondFactorMethod(id.method) && !id.impersonated {
+			s.forwardAuthRequire(w, r, id, mfaRequiredPath)
 			return
 		}
 	}
@@ -97,25 +103,31 @@ func (s *Server) handleForwardAuth(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-func (s *Server) forwardAuthDeny(w http.ResponseWriter, r *http.Request) {
-	s.forwardAuthRedirect(w, r, "/login")
-}
-
-// forwardAuthRedirect sends a browser request for an allowlisted host to a
-// Kivraid page (login, password change) that returns it to the original URL
-// afterwards; anything else gets a bare 401.
-func (s *Server) forwardAuthRedirect(w http.ResponseWriter, r *http.Request, path string) {
+// forwardAuthRequire sends a signed-in user who still owes something
+// (a new password, a second factor) to the Kivraid page that handles it.
+// With Kivraid's own session, that page returns to the original URL. With
+// an application-host session, it goes back through the sign-in start, so
+// that a fresh code carries the session's new state to the application.
+func (s *Server) forwardAuthRequire(w http.ResponseWriter, r *http.Request, id forwardIdentity, path string) {
+	if id.appSession {
+		s.forwardAuthSignIn(w, r)
+		return
+	}
 	host := r.Header.Get("X-Forwarded-Host")
-	if host != "" && s.forwardHostAllowed(host) {
-		proto := r.Header.Get("X-Forwarded-Proto")
-		if proto == "" {
-			proto = "https"
-		}
-		original := proto + "://" + host + r.Header.Get("X-Forwarded-Uri")
-		http.Redirect(w, r, s.issuer()+path+"?next="+url.QueryEscape(original), http.StatusFound)
+	if host != "" && s.forwardHostAllowed(host) && !nginxAuthRequest(r) {
+		http.Redirect(w, r, s.issuer()+path+"?next="+url.QueryEscape(forwardedURL(r)), http.StatusFound)
 		return
 	}
 	http.Error(w, "unauthorized", http.StatusUnauthorized)
+}
+
+// forwardedURL rebuilds the URL the browser asked the proxy for.
+func forwardedURL(r *http.Request) string {
+	proto := r.Header.Get("X-Forwarded-Proto")
+	if proto == "" {
+		proto = "https"
+	}
+	return proto + "://" + r.Header.Get("X-Forwarded-Host") + r.Header.Get("X-Forwarded-Uri")
 }
 
 // normalizeHost lowercases host and strips any port and trailing dot. The

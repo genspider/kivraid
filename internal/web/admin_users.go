@@ -597,6 +597,9 @@ func (s *Server) revokeUserAccess(ctx context.Context, userID string) {
 		s.log.Warn("revoke sessions", "user", userID, "err", err)
 	}
 	s.revokeOAuthTokens(ctx, userID)
+	if err := s.store.DeleteForwardAuthSessionsByUser(ctx, userID); err != nil {
+		s.log.Warn("revoke forward-auth sessions", "user", userID, "err", err)
+	}
 	if s.backchannel != nil {
 		s.backchannel.User(ctx, userID)
 	}

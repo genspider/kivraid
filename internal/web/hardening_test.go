@@ -55,7 +55,8 @@ func TestForwardAuth(t *testing.T) {
 		t.Fatalf("unlisted host: want 401, got %d", resp.StatusCode)
 	}
 
-	// Anonymous, allowlisted host: redirect to login with absolute next.
+	// Anonymous, allowlisted host: redirect to the sign-in start, with the
+	// absolute original URL.
 	c := newClient(t)
 	req, _ = http.NewRequest("GET", ts.URL+"/outpost/auth", nil)
 	req.Header.Set("X-Forwarded-Proto", "https")
@@ -70,7 +71,7 @@ func TestForwardAuth(t *testing.T) {
 		t.Fatalf("allowlisted host: want 302, got %d", resp.StatusCode)
 	}
 	loc := resp.Header.Get("Location")
-	if !strings.Contains(loc, "/login?next=") ||
+	if !strings.Contains(loc, "/outpost/start?") ||
 		!strings.Contains(loc, url.QueryEscape("https://grafana.home.example.com/dashboards")) {
 		t.Fatalf("unexpected redirect %q", loc)
 	}

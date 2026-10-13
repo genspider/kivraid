@@ -129,6 +129,9 @@ func (e *userEnv) revokeAccess(ctx context.Context, userID string) error {
 	if err := e.store.DeleteRefreshTokensByUser(ctx, userID); err != nil {
 		return err
 	}
+	if err := e.store.DeleteForwardAuthSessionsByUser(ctx, userID); err != nil {
+		return err
+	}
 	log := newLogger(e.cfg.LogLevel)
 	_, storage, err := oidcserver.New(ctx, e.cfg, e.store, log)
 	if err != nil {

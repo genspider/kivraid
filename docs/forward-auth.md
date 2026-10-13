@@ -6,15 +6,39 @@ nginx `auth_request`, Caddy `forward_auth`).
 
 The proxy asks `GET /outpost/auth` on every request:
 
-- **Authenticated** (valid Kivraid session cookie): `200` with identity
-  headers the proxy can copy upstream: `Remote-User`, `Remote-Email`,
-  `Remote-Name`, `Remote-Groups` (comma-separated; a group whose name
-  contains a comma is left out rather than split).
-- **Anonymous**: `302` to the Kivraid login page with a `next` back to the
-  original URL — if the target host is allowlisted — otherwise `401`.
+- **Authenticated**: `200` with identity headers the proxy can copy
+  upstream: `Remote-User`, `Remote-Email`, `Remote-Name`, `Remote-Groups`
+  (comma-separated; a group whose name contains a comma is left out rather
+  than split).
+- **Anonymous**: a redirect to sign in — if the target host is allowlisted —
+  otherwise `401`.
 
-Because the post-login redirect leaves Kivraid's own origin, the allowed
-hosts must be declared explicitly (open-redirect protection):
+### How a protected host gets signed in
+
+Kivraid's session cookie belongs to Kivraid's host: the browser never sends
+it to `app.example.com`. So each protected host gets a session of its own,
+through a one-time code (the same design as Authentik's proxy outpost):
+
+1. An anonymous request to `app.example.com` is redirected to Kivraid's
+   `/outpost/start`, and a `kivraid_fa_state` cookie is set on
+   `app.example.com`.
+2. Kivraid signs the user in if needed (password, two-factor, a forced
+   password change, the application's own policy), then issues a code valid
+   for two minutes, for that host and that state only, and redirects to
+   `https://app.example.com/.kivraid/callback`.
+3. The proxy sends the callback to Kivraid like any other request to the
+   host. Kivraid redeems the code once and sets a `kivraid_fa` session
+   cookie on `app.example.com`, then returns to the page first asked for.
+
+That session lasts no longer than the Kivraid session it came from, and
+ends with it: signing out of Kivraid, revoking the session, changing the
+password or deactivating the account. Group and two-factor policies are
+checked again on every request. When Kivraid itself serves the protected
+host (or a parent of it that shares its cookie), its own session cookie is
+used directly.
+
+Because the redirects leave Kivraid's own origin, the allowed hosts must be
+declared explicitly (open-redirect protection):
 
 ```yaml
 # kivraid.yaml
@@ -28,12 +52,6 @@ Forward auth means every request reaches Kivraid through the reverse
 proxy, so also set `trusted_proxies` to the proxy's address — otherwise
 rate limiting and the audit log attribute everything to the proxy's IP.
 See [configuration.md](configuration.md#tls-and-the-issuer).
-
-Authentication relies on the Kivraid session cookie being scoped to the
-Kivraid host: the proxies below forward the original request's cookies to
-the auth endpoint, so the check works even though the protected
-application lives on a different (sub)domain. No cookie-domain sharing is
-required.
 
 ## Traefik
 
@@ -55,6 +73,10 @@ http:
       service: myapp
 ```
 
+The middleware also covers the `/.kivraid/callback` path of the host, so the
+code exchange needs no extra route: Traefik relays Kivraid's redirect and
+cookies to the browser.
+
 Leave `trustForwardHeader` off (the default): Traefik then sets
 `X-Forwarded-Host` from the request it routed. Turned on, it passes along
 whatever `X-Forwarded-Host` the client (or a load balancer in front) sent,
@@ -63,20 +85,27 @@ of the one requested.
 
 ## nginx
 
+`auth_request` only understands `2xx`, `401` and `403`, so nginx uses the
+`/outpost/auth/nginx` variant, which answers `401` where the others
+redirect; `error_page` then sends the browser through `/outpost/auth` for
+the redirect itself. The callback path is proxied to Kivraid directly.
+
 ```nginx
 location / {
     auth_request /kivraid-auth;
     auth_request_set $user   $upstream_http_remote_user;
     auth_request_set $email  $upstream_http_remote_email;
-    proxy_set_header Remote-User  $user;
-    proxy_set_header Remote-Email $email;
-    error_page 401 = @kivraid-login;
+    auth_request_set $groups $upstream_http_remote_groups;
+    proxy_set_header Remote-User   $user;
+    proxy_set_header Remote-Email  $email;
+    proxy_set_header Remote-Groups $groups;
+    error_page 401 = @kivraid-signin;
     proxy_pass http://myapp;
 }
 
 location = /kivraid-auth {
     internal;
-    proxy_pass https://auth.example.com/outpost/auth;
+    proxy_pass https://auth.example.com/outpost/auth/nginx;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header X-Forwarded-Host  $host;
     proxy_set_header X-Forwarded-Uri   $request_uri;
@@ -84,12 +113,25 @@ location = /kivraid-auth {
     proxy_set_header Content-Length "";
 }
 
-location @kivraid-login {
-    return 302 https://auth.example.com/login?next=$scheme://$host$request_uri;
+location @kivraid-signin {
+    rewrite ^ /outpost/auth break;
+    proxy_pass https://auth.example.com;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host  $host;
+    proxy_set_header X-Forwarded-Uri   $request_uri;
+}
+
+location = /.kivraid/callback {
+    proxy_pass https://auth.example.com/outpost/callback;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host  $host;
 }
 ```
 
 ## Caddy
+
+Caddy returns Kivraid's redirects and cookies to the browser for any
+non-`2xx` answer, the callback path included.
 
 ```caddyfile
 app.example.com {

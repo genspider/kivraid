@@ -319,7 +319,11 @@ signed in to; logout tokens are signed with the ID token key and delivered
 in the background), a password policy (minimum length and an optional
 Have I Been Pwned k-anonymity check, failing open) applied to every
 password Kivraid sets, and `kivraid user` recovery commands (list,
-reset-password, reset-mfa, promote).
+reset-password, reset-mfa, promote). Forward auth then gained sessions on
+the protected hosts themselves, since Kivraid's host-only session cookie
+never reaches them: a one-time code (two minutes, bound to the host and to a
+state cookie set there) is exchanged at `/.kivraid/callback` for a
+host-scoped cookie tied to the Kivraid session's sid, so it ends with it.
 
 Possible later: SAML, self-registration, non-OIDC social providers (e.g.
 GitHub), SCIM.

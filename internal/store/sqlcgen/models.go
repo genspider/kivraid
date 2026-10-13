@@ -67,6 +67,29 @@ type EmailToken struct {
 	CreatedAt time.Time
 }
 
+type ForwardAuthCode struct {
+	CodeHash         string
+	UserID           string
+	Sid              string
+	Host             string
+	State            string
+	LoginMethod      string
+	Impersonator     string
+	SessionExpiresAt time.Time
+	ExpiresAt        time.Time
+}
+
+type ForwardAuthSession struct {
+	TokenHash    string
+	UserID       string
+	Sid          string
+	Host         string
+	LoginMethod  string
+	Impersonator string
+	ExpiresAt    time.Time
+	CreatedAt    time.Time
+}
+
 type Group struct {
 	ID               string
 	Name             string

@@ -206,6 +206,13 @@ func serve(args []string) error {
 				if err := st.DeleteExpiredEmailTokens(ctx, time.Now().UTC()); err != nil {
 					log.Warn("email token cleanup", "err", err)
 				}
+				// Expired forward-auth codes and application-host sessions.
+				if err := st.DeleteExpiredForwardAuthCodes(ctx, time.Now().UTC()); err != nil {
+					log.Warn("forward-auth code cleanup", "err", err)
+				}
+				if err := st.DeleteExpiredForwardAuthSessions(ctx, time.Now().UTC()); err != nil {
+					log.Warn("forward-auth session cleanup", "err", err)
+				}
 				// Return heap freed since the last tick (e.g. after a
 				// login burst) to the OS instead of waiting for the lazy
 				// scavenger, keeping idle RSS low.

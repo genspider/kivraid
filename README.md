@@ -91,8 +91,10 @@ dark on the right.</sub>
   userinfo, introspection, revocation, RP-initiated and back-channel logout
   (applications are told when a user's Kivraid session ends).
 - **Forward auth** — protect apps without native SSO via Traefik, nginx or
-  Caddy, registered as first-class applications with their own group access
-  policy. See [docs/forward-auth.md](docs/forward-auth.md).
+  Caddy, on any host: each gets its own session through a one-time code
+  exchange, ended with the Kivraid session. Registered as first-class
+  applications with their own group access policy. See
+  [docs/forward-auth.md](docs/forward-auth.md).
 - **User sources** — local accounts (Argon2id) and live LDAP directories
   (OpenLDAP, LLDAP): bind authentication, paged group sync (RFC 2696),
   self-service password change written back via RFC 3062, and optional

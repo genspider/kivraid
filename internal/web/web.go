@@ -322,6 +322,9 @@ func (s *Server) Handler() http.Handler {
 	web.Handle("GET "+oidcserver.ResumePath, s.requireAuth(http.HandlerFunc(s.handleOIDCResume)))
 	web.Handle("POST /impersonate/stop", s.requireAuth(http.HandlerFunc(s.handleImpersonateStop)))
 	web.HandleFunc("GET /outpost/auth", s.handleForwardAuth)
+	web.HandleFunc("GET /outpost/auth/nginx", s.handleForwardAuth)
+	web.Handle("GET /outpost/start", s.requireAuth(http.HandlerFunc(s.handleForwardAuthStart)))
+	web.HandleFunc("GET /outpost/callback", s.handleForwardAuthCallback)
 
 	web.Handle("GET /admin", s.requireAdmin(http.HandlerFunc(s.handleAdminDashboard)))
 
