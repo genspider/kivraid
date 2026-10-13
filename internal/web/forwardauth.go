@@ -77,9 +77,16 @@ func (s *Server) handleForwardAuth(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	names := make([]string, len(groups))
-	for i, g := range groups {
-		names[i] = g.Name
+	// Remote-Groups is a comma-separated list: a name containing a comma
+	// would read as several groups downstream ("staff,admins" as staff and
+	// admins), so such a group is left out rather than split.
+	names := make([]string, 0, len(groups))
+	for _, g := range groups {
+		if strings.Contains(g.Name, ",") {
+			s.log.Warn("forward auth: group left out of Remote-Groups, its name contains a comma", "group", g.Name)
+			continue
+		}
+		names = append(names, g.Name)
 	}
 	h := w.Header()
 	h.Set("Remote-User", user.Username)

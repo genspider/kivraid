@@ -8,7 +8,8 @@ The proxy asks `GET /outpost/auth` on every request:
 
 - **Authenticated** (valid Kivraid session cookie): `200` with identity
   headers the proxy can copy upstream: `Remote-User`, `Remote-Email`,
-  `Remote-Name`, `Remote-Groups` (comma-separated).
+  `Remote-Name`, `Remote-Groups` (comma-separated; a group whose name
+  contains a comma is left out rather than split).
 - **Anonymous**: `302` to the Kivraid login page with a `next` back to the
   original URL — if the target host is allowlisted — otherwise `401`.
 
