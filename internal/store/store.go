@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -53,6 +54,9 @@ func Open(ctx context.Context, driver, dsn string) (*Store, error) {
 		db.Close()
 		return nil, fmt.Errorf("open database: %w", err)
 	}
+	if driver == "sqlite" {
+		restrictSQLiteFiles(dsn)
+	}
 	if err := Migrate(ctx, db, driver); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("migrate: %w", err)
@@ -61,6 +65,23 @@ func Open(ctx context.Context, driver, dsn string) (*Store, error) {
 }
 
 func (s *Store) Close() error { return s.DB.Close() }
+
+// restrictSQLiteFiles makes the database readable by its owner only. The
+// file holds session tokens and password hashes, and SQLite creates it
+// with the process umask (often world-readable 0644); the -wal and -shm
+// files it creates later take the database file's permissions. Best
+// effort: a file system that refuses chmod is left as is.
+func restrictSQLiteFiles(dsn string) {
+	path, _, _ := strings.Cut(strings.TrimPrefix(dsn, "file:"), "?")
+	if path == "" || strings.HasPrefix(path, ":memory:") {
+		return
+	}
+	for _, f := range []string{path, path + "-wal", path + "-shm"} {
+		if info, err := os.Stat(f); err == nil && info.Mode().Perm()&0o077 != 0 {
+			_ = os.Chmod(f, info.Mode().Perm()&0o700)
+		}
+	}
+}
 
 func sqliteDSN(path string) string {
 	pragmas := url.Values{}
