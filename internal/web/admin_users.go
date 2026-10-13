@@ -479,8 +479,15 @@ func (s *Server) handleAdminUserUpdate(w http.ResponseWriter, r *http.Request) {
 			s.serverError(w, r, err)
 			return
 		}
-		// A new address is unverified until the user confirms it.
+		// A new address is unverified until the user confirms it, and links
+		// already mailed to the old one (reset, invitation) stop working.
 		if emailChanged {
+			if err := s.store.DeleteEmailTokensByUserPurpose(r.Context(), sqlcgen.DeleteEmailTokensByUserPurposeParams{
+				UserID: target.ID, Purpose: purposePasswordReset,
+			}); err != nil {
+				s.serverError(w, r, err)
+				return
+			}
 			if err := s.store.SetEmailVerified(r.Context(), sqlcgen.SetEmailVerifiedParams{
 				EmailVerified: false, UpdatedAt: now, ID: target.ID,
 			}); err != nil {

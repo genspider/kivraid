@@ -145,7 +145,11 @@ func (s *Server) handleResetSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user, err := s.store.GetUserByID(r.Context(), row.UserID)
-	if err != nil || !s.canResetPassword(r.Context(), user) {
+	// A link sent to an address the account no longer has proves nothing
+	// about the current one (an invitation mailed to a mistyped address,
+	// since corrected): it must not set the password, nor mark the new
+	// address verified below.
+	if err != nil || !s.canResetPassword(r.Context(), user) || !strings.EqualFold(row.Email, user.Email) {
 		s.render(w, r, "reset.html", resetData{CSRF: s.csrfToken(r.Context()), Invalid: true})
 		return
 	}
