@@ -691,8 +691,11 @@ func (s *Storage) SetIntrospectionFromToken(ctx context.Context, resp *oidc.Intr
 	if err != nil {
 		return notFound(err)
 	}
+	// An error, not nil: op marks the token active whenever this returns
+	// nil, so an expired token would have been reported active until the
+	// periodic cleanup deleted it.
 	if time.Now().UTC().After(token.ExpiresAt) {
-		return nil // Active stays false
+		return oidc.ErrInvalidRequest().WithDescription("token expired")
 	}
 	// Only the audience may introspect a token.
 	if !slices.Contains(decodeJSONList(token.Audience), clientID) && token.ClientID != clientID {
