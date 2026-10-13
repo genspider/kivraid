@@ -216,3 +216,29 @@ func TestUserResetRevokesAccess(t *testing.T) {
 		t.Errorf("refresh tokens left: %d (err %v)", n, err)
 	}
 }
+
+// --user refuses to guess when a value is one account's username and
+// another's email.
+func TestFindUserAmbiguous(t *testing.T) {
+	cfg := testInstance(t)
+	env := openTestStore(t, cfg)
+	ctx := context.Background()
+	src := local.NewSource(env.store)
+	if _, err := src.CreateUser(ctx, "boss@corp.example", "first@corp.example", "First", "first-pass-123", false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := src.CreateUser(ctx, "second", "boss@corp.example", "Second", "second-pass-123", false); err != nil {
+		t.Fatal(err)
+	}
+	if err := userPromote([]string{"--config", cfg, "--user", "boss@corp.example"}); err == nil || !strings.Contains(err.Error(), "pass the username") {
+		t.Fatalf("ambiguous --user: got %v", err)
+	}
+	for _, name := range []string{"boss@corp.example", "second"} {
+		if u := mustUser(t, env.store, name); u.IsAdmin {
+			t.Errorf("%s was promoted", name)
+		}
+	}
+	if err := userPromote([]string{"--config", cfg, "--user", "second"}); err != nil {
+		t.Fatal(err)
+	}
+}

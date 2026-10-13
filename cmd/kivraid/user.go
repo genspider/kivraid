@@ -64,14 +64,27 @@ func (e *userEnv) findUser(ctx context.Context, ident string) (sqlcgen.User, err
 	if ident == "" {
 		return sqlcgen.User{}, errors.New("--user is required")
 	}
-	user, err := e.store.GetUserByUsername(ctx, ident)
-	if errors.Is(err, sql.ErrNoRows) {
-		user, err = e.store.GetUserByEmail(ctx, ident)
+	byName, nameErr := e.store.GetUserByUsername(ctx, ident)
+	if nameErr != nil && !errors.Is(nameErr, sql.ErrNoRows) {
+		return sqlcgen.User{}, nameErr
 	}
-	if errors.Is(err, sql.ErrNoRows) {
-		return sqlcgen.User{}, fmt.Errorf("no user with username or email %q (see \"kivraid user list\")", ident)
+	byEmail, emailErr := e.store.GetUserByEmail(ctx, ident)
+	if emailErr != nil && !errors.Is(emailErr, sql.ErrNoRows) {
+		return sqlcgen.User{}, emailErr
 	}
-	return user, err
+	switch {
+	case nameErr == nil && emailErr == nil && byName.ID != byEmail.ID:
+		// Usernames may look like email addresses: one account's username
+		// can be another's email. Promoting or resetting the wrong one is
+		// not something to guess.
+		return sqlcgen.User{}, fmt.Errorf("%q is the username of %s and the email of %s; pass the username of the account you mean",
+			ident, byName.Username, byEmail.Username)
+	case nameErr == nil:
+		return byName, nil
+	case emailErr == nil:
+		return byEmail, nil
+	}
+	return sqlcgen.User{}, fmt.Errorf("no user with username or email %q (see \"kivraid user list\")", ident)
 }
 
 // checkPassword applies the instance password policy (Settings → Security)
