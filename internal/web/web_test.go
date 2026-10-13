@@ -380,4 +380,9 @@ func TestSecurityHeaders(t *testing.T) {
 	if csp := resp.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "default-src 'self'") {
 		t.Errorf("missing CSP, got %q", resp.Header.Get("Content-Security-Policy"))
 	}
+	// form-action would make Chromium cancel the cross-origin redirect that
+	// ends a login (back to the relying party), see secureHeaders.
+	if csp := resp.Header.Get("Content-Security-Policy"); strings.Contains(csp, "form-action") {
+		t.Errorf("CSP must not restrict form-action, got %q", csp)
+	}
 }

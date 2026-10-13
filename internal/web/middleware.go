@@ -31,8 +31,14 @@ func (s *Server) secureHeaders(next http.Handler) http.Handler {
 	hsts := strings.HasPrefix(s.cfg.BaseURL, "https://")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
+		// No form-action: Chromium enforces it on every hop of the redirect
+		// chain that follows a submission, and the login forms legitimately
+		// end on another origin (a relying party's redirect_uri, an upstream
+		// identity provider, a forward-auth host). With form-action 'self',
+		// Chrome and Edge silently cancel that last redirect and the login
+		// never returns to the application.
 		h.Set("Content-Security-Policy",
-			"default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'")
+			"default-src 'self'; img-src 'self' data:; frame-ancestors 'none'")
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "same-origin")
