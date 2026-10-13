@@ -88,7 +88,9 @@
       <span class="chip flex items-center gap-1.5">
         <a href="/admin/groups/{{.ID}}" class="hover:underline">{{.Name}}</a>
         {{if eq .Source "local"}}
-        <form method="post" action="/admin/users/{{$.Data.Target.ID}}/groups/remove" class="contents">
+        <form method="post" action="/admin/users/{{$.Data.Target.ID}}/groups/remove" class="contents"
+              data-confirm="{{t "Remove %s from %s? They may lose access to applications restricted to it." $.Data.Target.Name .Name}}"
+              data-confirm-title="{{t "Remove member"}}" data-confirm-variant="danger" data-confirm-label="{{t "Remove"}}">
           <input type="hidden" name="_csrf" value="{{$.CSRF}}">
           <input type="hidden" name="group_id" value="{{.ID}}">
           <button type="submit" class="cursor-pointer text-faint hover:text-fg" aria-label="{{t "Remove from %s" .Name}}">&times;</button>
@@ -164,7 +166,9 @@
   {{end}}
 
   {{if .Data.CanResetPassword}}
-  <form method="post" action="/admin/users/{{.Data.Target.ID}}/password" class="card space-y-4 p-6">
+  <form method="post" action="/admin/users/{{.Data.Target.ID}}/password" class="card space-y-4 p-6"
+        data-confirm="{{t "%s will need this password to sign in, and is signed out everywhere." .Data.Target.Name}}"
+        data-confirm-title="{{t "Reset password"}}" data-confirm-label="{{t "Reset"}}">
     <input type="hidden" name="_csrf" value="{{.CSRF}}">
     <h2 class="text-sm font-semibold">{{t "Reset password"}}</h2>
     {{if .Data.IsLDAP}}<p class="-mt-2 text-xs text-muted">{{t "Sets the password directly in the directory, using the service account."}}</p>{{end}}

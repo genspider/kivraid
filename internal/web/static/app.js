@@ -512,7 +512,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // the original form is submitted directly (which does not re-fire submit,
 // so the guard is not re-entered). CSP forbids inline handlers, hence the
 // delegated listener.
-const confirmState = { form: null };
+const confirmState = { form: null, submitter: null, confirmed: false };
 
 function ensureConfirmDialog() {
   let dlg = document.getElementById("confirm-dialog");
@@ -541,25 +541,39 @@ function ensureConfirmDialog() {
     if (e.target === dlg) close();
   });
   dlg.querySelector("[data-confirm-ok]").addEventListener("click", () => {
-    const form = confirmState.form;
+    const { form, submitter } = confirmState;
     dlg.close();
-    if (form) form.submit();
+    if (!form) return;
+    // Submit again through the same button, so its formaction and value
+    // apply; the flag lets that second submit through.
+    confirmState.confirmed = true;
+    form.requestSubmit(submitter && submitter.form === form ? submitter : undefined);
   });
   return dlg;
 }
 
+// The data-confirm attributes go on the form, or on one of its buttons when
+// only that button needs confirming (a second action through formaction).
 document.addEventListener("submit", (e) => {
+  if (confirmState.confirmed) {
+    confirmState.confirmed = false;
+    return;
+  }
   const form = e.target;
-  if (!form.dataset || !form.dataset.confirm) return;
+  const submitter = e.submitter;
+  const source =
+    submitter && submitter.dataset && submitter.dataset.confirm ? submitter : form;
+  if (!source.dataset || !source.dataset.confirm) return;
   e.preventDefault();
   confirmState.form = form;
+  confirmState.submitter = submitter || null;
   const dlg = ensureConfirmDialog();
-  const danger = form.dataset.confirmVariant === "danger";
+  const danger = source.dataset.confirmVariant === "danger";
   dlg.querySelector("[data-confirm-title]").textContent =
-    form.dataset.confirmTitle || "Please confirm";
-  dlg.querySelector("[data-confirm-body]").textContent = form.dataset.confirm;
+    source.dataset.confirmTitle || tr("Please confirm");
+  dlg.querySelector("[data-confirm-body]").textContent = source.dataset.confirm;
   const ok = dlg.querySelector("[data-confirm-ok]");
-  ok.textContent = form.dataset.confirmLabel || tr("Confirm");
+  ok.textContent = source.dataset.confirmLabel || tr("Confirm");
   ok.className = danger ? "btn-danger" : "btn-primary";
   dlg.showModal();
   dlg.querySelector("[data-confirm-cancel]").focus();

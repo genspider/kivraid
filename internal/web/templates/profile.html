@@ -121,7 +121,9 @@
     </div>
     <div class="flex flex-wrap gap-3">
       <button type="submit" class="btn-secondary">{{t "Regenerate recovery codes"}}</button>
-      {{if not .Data.MFARequired}}<button type="submit" formaction="/profile/mfa/disable" class="btn-danger-soft">{{t "Disable two-factor"}}</button>{{end}}
+      {{if not .Data.MFARequired}}<button type="submit" formaction="/profile/mfa/disable" class="btn-danger-soft"
+        data-confirm="{{t "Your account will be protected by your password alone. You can turn two-factor back on at any time."}}"
+        data-confirm-title="{{t "Disable two-factor?"}}" data-confirm-variant="danger" data-confirm-label="{{t "Disable two-factor"}}">{{t "Disable two-factor"}}</button>{{end}}
     </div>
     {{if .Data.MFARequired}}<p class="text-xs text-muted">{{t "Your administrator requires two-factor authentication for your account."}}</p>{{end}}
   </form>
