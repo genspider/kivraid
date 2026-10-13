@@ -2,15 +2,15 @@
 
 Kivraid can act as an **OpenID Connect relying party** to upstream identity
 providers, so users sign in through an existing IdP (Authentik, Keycloak,
-Google, …) and Kivraid federates their accounts. Configure this under
-**Admin → Federation**, which has two tabs: **Providers** and **Routing**.
+Google, …) and Kivraid federates their accounts. Configure this in the
+admin, under **Identity sources**: **Providers** and **Login routing**.
 
 Generic OIDC only for now — any issuer that publishes a discovery document
 works. Non-OIDC social providers (e.g. GitHub) are not supported yet.
 
 ## Registering a provider
 
-Under **Federation → Providers → New provider**:
+Under **Admin → Providers → New provider**:
 
 - **Issuer URL** — the provider's base URL; its
   `/.well-known/openid-configuration` is fetched to discover the endpoints.
@@ -37,7 +37,7 @@ An enabled provider shows a **"Continue with …"** button on the login page.
 ## Login routing (home-realm discovery)
 
 Rather than click a button, users can just type their identifier and be
-routed automatically. Under **Federation → Routing**, the entered identifier
+routed automatically. Under **Admin → Login routing**, the entered identifier
 is matched **most-specific first**:
 
 1. an **exact identifier** rule (`alice@example.com → provider`),

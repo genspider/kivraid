@@ -141,7 +141,10 @@ default).
   focus rings (accessibility is part of "limpide"), 150–200 ms ease-out
   transitions, `prefers-reduced-motion` respected, real empty states with
   a call to action instead of blank tables.
-- Icons: embedded SVG sprite (Lucide subset).
+- Icons: a shared set of 16px linear SVG icons (`internal/web/icons.go`,
+  common with codehearth), inlined by the `icon` template function.
+- Navigation: a top bar for the portal; admin and account pages add a side
+  menu (sections as menu groups, a horizontal strip on small screens).
 
 ### Application model (mirroring Authentik)
 
