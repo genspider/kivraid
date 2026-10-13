@@ -130,7 +130,9 @@ a passkey, or an upstream identity provider (federated users authenticate
 there). Anyone required but not enrolled is sent to set up an authenticator
 app before reaching any other page, continues right after, and can no
 longer turn two-factor off. A user who is enrolled but holds an older,
-password-only session is asked to sign in again.
+password-only session is asked to sign in again. The policy covers applications
+protected by forward auth too: a session without a second factor is sent
+to set one up before the proxy lets it through.
 
 An application can also require two-factor on its own (its **Access**
 section); this applies to OIDC sign-ins and forward auth alike.

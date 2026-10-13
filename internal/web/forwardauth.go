@@ -36,6 +36,18 @@ func (s *Server) handleForwardAuth(w http.ResponseWriter, r *http.Request) {
 		s.forwardAuthRedirect(w, r, passwordChangePath)
 		return
 	}
+	// The instance two-factor policy covers protected applications as it
+	// covers Kivraid's own pages: a password-only session must first set up
+	// or use its second factor.
+	if err := s.applyEffectiveAdmin(r.Context(), &user); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	if s.mfaRequiredFor(user) && !s.sessionHasSecondFactor(r.Context()) &&
+		s.sessions.GetString(r.Context(), session.KeyImpersonatorName) == "" {
+		s.forwardAuthRedirect(w, r, mfaRequiredPath)
+		return
+	}
 
 	// If a proxy application is registered for the requested host, enforce
 	// its group access policy (an unrestricted app admits any authenticated user).

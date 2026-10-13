@@ -49,6 +49,21 @@ func (s *Server) secureHeaders(next http.Handler) http.Handler {
 	})
 }
 
+// applyEffectiveAdmin makes user.IsAdmin the effective role, not just the
+// stored flag: membership in a granting group confers it for the duration
+// of the request.
+func (s *Server) applyEffectiveAdmin(ctx context.Context, user *sqlcgen.User) error {
+	if user.IsAdmin {
+		return nil
+	}
+	n, err := s.store.CountAdminGroupMemberships(ctx, user.ID)
+	if err != nil {
+		return err
+	}
+	user.IsAdmin = n > 0
+	return nil
+}
+
 // passwordChangePath is where a user with an administrator-chosen password
 // picks their own.
 const passwordChangePath = "/password/change"
@@ -73,15 +88,9 @@ func (s *Server) requireAuth(next http.Handler) http.Handler {
 			s.serverError(w, r, err)
 			return
 		}
-		// The administrator role is effective, not just stored: membership
-		// in a granting group confers it for the duration of the request.
-		if !user.IsAdmin {
-			n, err := s.store.CountAdminGroupMemberships(r.Context(), user.ID)
-			if err != nil {
-				s.serverError(w, r, err)
-				return
-			}
-			user.IsAdmin = n > 0
+		if err := s.applyEffectiveAdmin(r.Context(), &user); err != nil {
+			s.serverError(w, r, err)
+			return
 		}
 		// An administrator-chosen password must be replaced before anything
 		// else (not while an admin is merely viewing as the user).
