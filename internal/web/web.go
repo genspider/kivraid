@@ -438,7 +438,7 @@ func (s *Server) Handler() http.Handler {
 		root.Handle("/authorize/callback", s.sessions.LoadAndSave(s.guardCallback(s.oidc)))
 	}
 	root.Handle("/", webChain)
-	return root
+	return limitRequestBodies(root)
 }
 
 // localTime renders a timestamp as a <time> element: the server shows UTC,

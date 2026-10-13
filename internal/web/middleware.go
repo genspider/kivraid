@@ -49,6 +49,34 @@ func (s *Server) secureHeaders(next http.Handler) http.Handler {
 	})
 }
 
+const (
+	// maxBodySize bounds an ordinary request body: forms, the passkey and
+	// token endpoints. The largest legitimate one is a few kilobytes.
+	maxBodySize = 1 << 20
+	// maxUploadBodySize bounds a multipart upload: the branding form can
+	// carry a logo and a sign-in background at once, plus the encoding.
+	maxUploadBodySize = maxUploadPhotoSize + maxUploadBackgroundSize + 1<<20
+)
+
+// limitRequestBodies caps every request body before any handler (or the
+// CSRF check, which parses forms) reads it. Without it, an anonymous
+// client could make the server buffer an arbitrarily large body, e.g. a
+// JSON passkey assertion, and exhaust memory.
+func limitRequestBodies(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		limit := int64(maxBodySize)
+		if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+			limit = maxUploadBodySize
+		}
+		if r.ContentLength > limit {
+			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
+		next.ServeHTTP(w, r)
+	})
+}
+
 // applyEffectiveAdmin makes user.IsAdmin the effective role, not just the
 // stored flag: membership in a granting group confers it for the duration
 // of the request.
