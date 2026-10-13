@@ -33,7 +33,7 @@
       <div class="dt">{{t "Client secret"}}</div>
       <div class="flex items-center gap-2">
         {{if .Data.ClientSecret}}
-        <input class="code-box flex-1" type="password" readonly value="{{.Data.ClientSecret}}" data-secret>
+        <input class="code-box flex-1" type="password" readonly value="{{.Data.ClientSecret}}" data-secret aria-label="{{t "Client secret"}}">
         <button type="button" class="btn-icon shrink-0" data-secret-toggle aria-label="{{t "Show secret"}}">
           <svg data-eye class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           <svg data-eye-off class="hidden size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.68M6.1 6.1A13.2 13.2 0 0 0 2 12s3.5 7 10 7a9.1 9.1 0 0 0 5.9-2.1M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="M2 2l20 20"/></svg>

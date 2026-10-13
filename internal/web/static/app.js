@@ -629,15 +629,30 @@ document.addEventListener("submit", (e) => {
   // ("Save & sync" posts sync=1).
   if (btn.name) {
     const carry = document.createElement("input");
+    carry.dataset.carry = "";
     carry.type = "hidden";
     carry.name = btn.name;
     carry.value = btn.value;
     e.target.appendChild(carry);
   }
+  btn.dataset.label = btn.innerHTML;
   btn.disabled = true;
   btn.dataset.width = btn.offsetWidth; // avoid a width jump
   btn.style.minWidth = btn.offsetWidth + "px";
   btn.innerHTML = `<span class="spinner"></span><span class="sr-only">${label}</span>`;
+});
+
+// Back/forward restores a page from the cache as it was left, spinner and
+// all: give the buttons back, and drop values carried for that submit.
+window.addEventListener("pageshow", (e) => {
+  if (!e.persisted) return;
+  for (const btn of document.querySelectorAll("button[data-label]")) {
+    btn.innerHTML = btn.dataset.label;
+    btn.disabled = false;
+    btn.style.minWidth = "";
+    delete btn.dataset.label;
+  }
+  for (const carry of document.querySelectorAll("input[data-carry]")) carry.remove();
 });
 
 // On small screens the side menus are a select: picking an entry opens it.

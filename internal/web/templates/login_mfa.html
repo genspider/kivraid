@@ -27,7 +27,7 @@
       </div>
 
       {{if .Error}}
-      <div class="alert-danger mb-4" role="alert">{{.Error}}</div>
+      <div class="alert-danger mb-4" role="alert" id="form-error">{{.Error}}</div>
       {{end}}
 
       <form method="post" action="/login/mfa" class="auth-card space-y-4 p-6">
@@ -35,7 +35,8 @@
         <div>
           <label class="label" for="code">{{t "Authentication code"}}</label>
           <input class="input text-center font-mono text-lg tracking-[0.3em]" id="code" name="code"
-                 inputmode="numeric" autocomplete="one-time-code" placeholder="000000" required autofocus>
+                 inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="32" autocapitalize="off" spellcheck="false" required autofocus
+                 {{if .Error}}aria-invalid="true" aria-describedby="form-error"{{end}}>
         </div>
         <button type="submit" class="btn-primary w-full">{{t "Verify"}}</button>
         <button type="button" data-mfa-recovery-toggle
