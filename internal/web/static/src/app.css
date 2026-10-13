@@ -637,17 +637,19 @@
    * saturated wash of color blobs plus a faint grain, theme-aware and
    * fully self-contained (no external image, CSP-clean). The swatch is the
    * same wash as a thumbnail, for the Branding settings. */
-  /* The mesh behind the sign-in pages: the brand blue, with lightness kept
-   * at 52% or below so white text on it stays above 4.5:1. */
+  /* The mesh behind the sign-in pages: the brand blue as a bright, saturated
+   * wash running from cyan to indigo-violet in the corners. The base, which
+   * sits behind the centred title, stays darker than the blobs so the white
+   * text on it keeps its contrast (helped by a soft shadow, see .aurora-title). */
   .aurora,
   .aurora-swatch {
-    background-color: oklch(44% 0.13 262);
+    background-color: oklch(54% 0.17 262);
     background-image:
-      radial-gradient(60rem 60rem at 12% 6%, oklch(52% 0.15 258), transparent 55%),
-      radial-gradient(55rem 55rem at 88% 0%, oklch(48% 0.12 232), transparent 52%),
-      radial-gradient(58rem 58rem at 92% 96%, oklch(42% 0.14 275), transparent 55%),
-      radial-gradient(52rem 52rem at 4% 100%, oklch(46% 0.13 245), transparent 55%),
-      radial-gradient(46rem 46rem at 50% 120%, oklch(50% 0.12 220), transparent 55%);
+      radial-gradient(60rem 60rem at 12% 6%, oklch(68% 0.17 245), transparent 55%),
+      radial-gradient(55rem 55rem at 88% 0%, oklch(70% 0.14 215), transparent 52%),
+      radial-gradient(58rem 58rem at 92% 96%, oklch(60% 0.2 285), transparent 55%),
+      radial-gradient(52rem 52rem at 4% 100%, oklch(60% 0.19 268), transparent 55%),
+      radial-gradient(46rem 46rem at 50% 120%, oklch(68% 0.15 230), transparent 55%);
   }
   .aurora {
     position: fixed;
@@ -656,13 +658,13 @@
     pointer-events: none;
   }
   [data-theme="dark"] .aurora {
-    background-color: oklch(22% 0.06 262);
+    background-color: oklch(24% 0.09 262);
     background-image:
-      radial-gradient(60rem 60rem at 12% 6%, oklch(34% 0.11 258), transparent 55%),
-      radial-gradient(55rem 55rem at 88% 0%, oklch(30% 0.09 232), transparent 52%),
-      radial-gradient(58rem 58rem at 92% 96%, oklch(30% 0.1 275), transparent 55%),
-      radial-gradient(52rem 52rem at 4% 100%, oklch(28% 0.09 245), transparent 55%),
-      radial-gradient(46rem 46rem at 50% 120%, oklch(32% 0.08 220), transparent 55%);
+      radial-gradient(60rem 60rem at 12% 6%, oklch(42% 0.15 250), transparent 55%),
+      radial-gradient(55rem 55rem at 88% 0%, oklch(40% 0.12 220), transparent 52%),
+      radial-gradient(58rem 58rem at 92% 96%, oklch(38% 0.16 285), transparent 55%),
+      radial-gradient(52rem 52rem at 4% 100%, oklch(36% 0.15 268), transparent 55%),
+      radial-gradient(46rem 46rem at 50% 120%, oklch(44% 0.13 235), transparent 55%);
   }
   /* Fine grain overlay to avoid banding and add texture. */
   .aurora::after {
@@ -753,6 +755,12 @@
   }
   .aurora-title {
     @apply text-xl font-semibold tracking-tight text-white;
+  }
+  /* A soft shadow keeps the white text legible over the brighter blobs. */
+  .aurora-title,
+  .aurora-sub,
+  .aurora-foot {
+    text-shadow: 0 1px 2px oklch(25% 0.08 262 / 45%);
   }
   .aurora-sub {
     @apply mt-1 text-sm text-white/90;
