@@ -1,6 +1,7 @@
 package oidcserver
 
 import (
+	"slices"
 	"time"
 
 	"github.com/zitadel/oidc/v3/pkg/oidc"
@@ -20,11 +21,18 @@ type authRequest struct {
 	ResponseMode        oidc.ResponseMode        `json:"response_mode"`
 	CodeChallenge       string                   `json:"code_challenge,omitempty"`
 	CodeChallengeMethod oidc.CodeChallengeMethod `json:"code_challenge_method,omitempty"`
+	// Prompt and MaxAge carry the client's demand for a fresh sign-in
+	// (prompt=login, max_age), honoured by the web layer before completion.
+	Prompt []string `json:"prompt,omitempty"`
+	MaxAge *uint    `json:"max_age,omitempty"`
 
 	// Filled in when the user completes the login flow.
 	UserID   string    `json:"user_id,omitempty"`
 	AuthTime time.Time `json:"auth_time,omitzero"`
 	IsDone   bool      `json:"done"`
+	// AMR lists the authentication methods of the session that completed
+	// the request (RFC 8176 values).
+	AMR []string `json:"amr,omitempty"`
 	// SessionID is the Kivraid session (sid) the user signed in with; it
 	// is the sid claim of the ID token and of back-channel logout tokens.
 	SessionID string `json:"sid,omitempty"`
@@ -43,7 +51,22 @@ func newAuthRequest(id string, r *oidc.AuthRequest, now time.Time) *authRequest 
 		ResponseMode:        r.ResponseMode,
 		CodeChallenge:       r.CodeChallenge,
 		CodeChallengeMethod: r.CodeChallengeMethod,
+		Prompt:              r.Prompt,
+		MaxAge:              r.MaxAge,
 	}
+}
+
+// needsFreshLogin reports whether the client asked for a sign-in more
+// recent than loginAt: prompt=login, or a max_age that loginAt exceeds. A
+// sign-in made after the request was created always satisfies it.
+func (a *authRequest) needsFreshLogin(loginAt, now time.Time) bool {
+	if !loginAt.Before(a.CreatedAt.Truncate(time.Second)) {
+		return false
+	}
+	if slices.Contains(a.Prompt, oidc.PromptLogin) {
+		return true
+	}
+	return a.MaxAge != nil && now.Sub(loginAt) > time.Duration(*a.MaxAge)*time.Second
 }
 
 func (a *authRequest) GetID() string          { return a.ID }
@@ -60,10 +83,13 @@ func (a *authRequest) Done() bool             { return a.IsDone }
 func (a *authRequest) sessionID() string      { return a.SessionID }
 
 func (a *authRequest) GetAMR() []string {
-	if a.IsDone {
-		return []string{"pwd"}
+	if !a.IsDone {
+		return nil
 	}
-	return nil
+	if a.AMR == nil {
+		return []string{"pwd"} // completed before methods were recorded
+	}
+	return a.AMR
 }
 
 func (a *authRequest) GetResponseType() oidc.ResponseType { return a.ResponseType }

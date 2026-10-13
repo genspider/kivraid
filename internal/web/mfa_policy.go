@@ -131,6 +131,30 @@ func (s *Server) handleMFARequired(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// amrFor maps a session's login method to the OIDC amr claim (RFC 8176
+// values). A federated sign-in's methods are the upstream's and unknown
+// here, so it carries none.
+func amrFor(method string) []string {
+	switch method {
+	case loginPassword:
+		return []string{"pwd"}
+	case loginPasswordTOTP:
+		return []string{"pwd", "otp", "mfa"}
+	case loginPasskey:
+		return []string{"pop", "user", "mfa"}
+	}
+	return []string{}
+}
+
+// sessionLoginAt is when the current session signed in (zero when unknown,
+// for sessions that predate the record).
+func (s *Server) sessionLoginAt(ctx context.Context) time.Time {
+	if at := s.sessions.GetInt64(ctx, session.KeyLoginAt); at > 0 {
+		return time.Unix(at, 0).UTC()
+	}
+	return time.Time{}
+}
+
 // factorChangeAllowed reports whether the current session may add or
 // remove a second factor. A user who already has one (an authenticator app
 // or a passkey) must have signed in with it: otherwise the password alone

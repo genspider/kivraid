@@ -255,11 +255,25 @@ func (s *Storage) ClientIDForAuthRequest(ctx context.Context, id string) (string
 	return req.ClientID, nil
 }
 
+// AuthRequestNeedsLogin reports whether a pending authorization request
+// asks for a fresher sign-in than the session's (prompt=login, max_age).
+func (s *Storage) AuthRequestNeedsLogin(ctx context.Context, id string, loginAt time.Time) (bool, error) {
+	row, err := s.store.GetAuthRequestByID(ctx, id)
+	if err != nil {
+		return false, notFound(err)
+	}
+	req, err := s.authRequestFromRow(row)
+	if err != nil {
+		return false, err
+	}
+	return req.needsFreshLogin(loginAt, time.Now().UTC()), nil
+}
+
 // CompleteAuthRequest binds the authenticated user and their Kivraid
-// session (sid) to a pending authorization request, and records that the
-// session signed in to the client for back-channel logout. Called by the
-// web layer after login.
-func (s *Storage) CompleteAuthRequest(ctx context.Context, id, userID, sid string) error {
+// session (sid, sign-in time and methods) to a pending authorization
+// request, and records that the session signed in to the client for
+// back-channel logout. Called by the web layer after login.
+func (s *Storage) CompleteAuthRequest(ctx context.Context, id, userID, sid string, authTime time.Time, amr []string) error {
 	row, err := s.store.GetAuthRequestByID(ctx, id)
 	if err != nil {
 		return notFound(err)
@@ -274,10 +288,17 @@ func (s *Storage) CompleteAuthRequest(ctx context.Context, id, userID, sid strin
 		return oidc.ErrInvalidRequest().WithDescription("authorization request already completed")
 	}
 	now := time.Now().UTC()
+	if authTime.IsZero() {
+		authTime = now
+	}
 	req.UserID = userID
-	req.AuthTime = now
+	req.AuthTime = authTime.UTC()
 	req.IsDone = true
 	req.SessionID = sid
+	req.AMR = amr
+	if req.AMR == nil {
+		req.AMR = []string{}
+	}
 	raw, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -377,11 +398,11 @@ func (s *Storage) CreateAccessAndRefreshTokens(ctx context.Context, req op.Token
 	now := time.Now().UTC()
 
 	authTime := now
-	amr := []string{"pwd"}
+	var amr []string
 	if r, ok := req.(interface{ GetAuthTime() time.Time }); ok && !r.GetAuthTime().IsZero() {
 		authTime = r.GetAuthTime().UTC()
 	}
-	if r, ok := req.(interface{ GetAMR() []string }); ok && r.GetAMR() != nil {
+	if r, ok := req.(interface{ GetAMR() []string }); ok {
 		amr = r.GetAMR()
 	}
 

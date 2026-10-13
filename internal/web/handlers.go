@@ -59,9 +59,11 @@ func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
-	if s.sessions.GetString(r.Context(), session.KeyUserID) != "" {
+	reauth := r.URL.Query().Get("reauth") == "1"
+	if s.sessions.GetString(r.Context(), session.KeyUserID) != "" && !reauth {
 		// Already authenticated: honor the next target (e.g. an OIDC flow
-		// resume) instead of bouncing to the portal.
+		// resume) instead of bouncing to the portal. An application asking
+		// for a fresh sign-in (reauth) gets the form instead.
 		http.Redirect(w, r, s.safeNext(r.URL.Query().Get("next"), "/"), http.StatusSeeOther)
 		return
 	}
@@ -73,6 +75,8 @@ func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 		notice = s.t(r, "Your password has been changed. Sign in with it.")
 	case r.URL.Query().Get("verified") == "1":
 		notice = s.t(r, "Your email address is now verified.")
+	case reauth:
+		notice = s.t(r, "The application asks you to sign in again.")
 	}
 	var accounts []rememberedAccount
 	if r.URL.Query().Get("other") != "1" {
@@ -239,12 +243,17 @@ func (s *Server) completeLogin(w http.ResponseWriter, r *http.Request, user sqlc
 	if err := s.sessions.RenewToken(r.Context()); err != nil {
 		return err
 	}
+	// A new sign-in gets a new sid, except when the same user signs in
+	// again in this session (an application asked to re-authenticate): the
+	// applications already opened stay attached to it for logout.
+	if s.sessions.GetString(r.Context(), session.KeyUserID) != user.ID || s.sessions.GetString(r.Context(), session.KeySID) == "" {
+		s.sessions.Put(r.Context(), session.KeySID, randomHex(16))
+	}
 	s.sessions.Put(r.Context(), session.KeyUserID, user.ID)
 	s.sessions.Put(r.Context(), session.KeyIP, s.clientIP(r))
 	s.sessions.Put(r.Context(), session.KeyUserAgent, r.UserAgent())
 	s.sessions.Put(r.Context(), session.KeyLoginAt, time.Now().Unix())
 	s.sessions.Put(r.Context(), session.KeyLoginMethod, method)
-	s.sessions.Put(r.Context(), session.KeySID, randomHex(16))
 	// Alert the user about a browser that never signed in as them, unless
 	// this is the account's very first sign-in.
 	if s.newDeviceAlerts.Load() && user.LastLoginAt.Valid && user.Email != "" && !s.knownDevice(r, user.ID) {
@@ -507,6 +516,15 @@ func (s *Server) handleOIDCResume(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "authorization request not found or expired", http.StatusBadRequest)
 		return
 	}
+	// prompt=login or max_age: the application wants a sign-in more recent
+	// than this session's. Signing in again comes back here.
+	if again, err := s.oidcStore.AuthRequestNeedsLogin(r.Context(), id, s.sessionLoginAt(r.Context())); err != nil {
+		http.Error(w, "authorization request not found or expired", http.StatusBadRequest)
+		return
+	} else if again {
+		http.Redirect(w, r, "/login?reauth=1&next="+url.QueryEscape(r.URL.RequestURI()), http.StatusSeeOther)
+		return
+	}
 	provider, err := s.store.GetProviderByClientID(r.Context(), clientID)
 	if err != nil {
 		s.serverError(w, r, err)
@@ -537,7 +555,8 @@ func (s *Server) handleOIDCResume(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.oidcStore.CompleteAuthRequest(r.Context(), id, user.ID, s.sessionSID(r.Context())); err != nil {
+	if err := s.oidcStore.CompleteAuthRequest(r.Context(), id, user.ID, s.sessionSID(r.Context()),
+		s.sessionLoginAt(r.Context()), amrFor(s.sessions.GetString(r.Context(), session.KeyLoginMethod))); err != nil {
 		s.log.Warn("resume authorization request", "id", id, "err", err)
 		http.Error(w, "authorization request not found or expired", http.StatusBadRequest)
 		return
