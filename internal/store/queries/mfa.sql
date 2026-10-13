@@ -19,8 +19,9 @@ SELECT * FROM mfa_recovery_codes WHERE user_id = $1 AND used_at IS NULL;
 -- name: CountUnusedRecoveryCodes :one
 SELECT COUNT(*) FROM mfa_recovery_codes WHERE user_id = $1 AND used_at IS NULL;
 
--- name: MarkRecoveryCodeUsed :exec
-UPDATE mfa_recovery_codes SET used_at = $1 WHERE id = $2;
+-- name: MarkRecoveryCodeUsed :execrows
+-- Zero rows means a concurrent request spent the code first.
+UPDATE mfa_recovery_codes SET used_at = $1 WHERE id = $2 AND used_at IS NULL;
 
 -- name: DeleteRecoveryCodes :exec
 DELETE FROM mfa_recovery_codes WHERE user_id = $1;

@@ -120,8 +120,8 @@ func (q *Queries) ListUnusedRecoveryCodes(ctx context.Context, userID string) ([
 	return items, nil
 }
 
-const markRecoveryCodeUsed = `-- name: MarkRecoveryCodeUsed :exec
-UPDATE mfa_recovery_codes SET used_at = $1 WHERE id = $2
+const markRecoveryCodeUsed = `-- name: MarkRecoveryCodeUsed :execrows
+UPDATE mfa_recovery_codes SET used_at = $1 WHERE id = $2 AND used_at IS NULL
 `
 
 type MarkRecoveryCodeUsedParams struct {
@@ -129,9 +129,13 @@ type MarkRecoveryCodeUsedParams struct {
 	ID     string
 }
 
-func (q *Queries) MarkRecoveryCodeUsed(ctx context.Context, arg MarkRecoveryCodeUsedParams) error {
-	_, err := q.db.ExecContext(ctx, markRecoveryCodeUsed, arg.UsedAt, arg.ID)
-	return err
+// Zero rows means a concurrent request spent the code first.
+func (q *Queries) MarkRecoveryCodeUsed(ctx context.Context, arg MarkRecoveryCodeUsedParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, markRecoveryCodeUsed, arg.UsedAt, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const setUserTOTP = `-- name: SetUserTOTP :exec

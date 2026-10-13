@@ -202,9 +202,12 @@ func (m *Manager) ConsumeRecoveryCode(ctx context.Context, userID, code string) 
 	}
 	for _, row := range rows {
 		if subtle.ConstantTimeCompare([]byte(row.CodeHash), []byte(want)) == 1 {
-			return true, m.store.MarkRecoveryCodeUsed(ctx, sqlcgen.MarkRecoveryCodeUsedParams{
+			// Claim the code atomically: two requests racing with the same
+			// code must not both get through.
+			n, err := m.store.MarkRecoveryCodeUsed(ctx, sqlcgen.MarkRecoveryCodeUsedParams{
 				UsedAt: sql.NullTime{Time: time.Now().UTC(), Valid: true}, ID: row.ID,
 			})
+			return n == 1, err
 		}
 	}
 	return false, nil
