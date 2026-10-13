@@ -43,7 +43,6 @@ http:
     kivraid:
       forwardAuth:
         address: "https://auth.example.com/outpost/auth"
-        trustForwardHeader: true
         authResponseHeaders:
           - Remote-User
           - Remote-Email
@@ -55,6 +54,12 @@ http:
       middlewares: [kivraid]
       service: myapp
 ```
+
+Leave `trustForwardHeader` off (the default): Traefik then sets
+`X-Forwarded-Host` from the request it routed. Turned on, it passes along
+whatever `X-Forwarded-Host` the client (or a load balancer in front) sent,
+and Kivraid would apply the policy of the application named there instead
+of the one requested.
 
 ## nginx
 
