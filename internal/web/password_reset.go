@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/kivraid/kivraid/internal/audit"
 	"github.com/kivraid/kivraid/internal/store/sqlcgen"
@@ -98,12 +99,21 @@ func (s *Server) handleForgotSubmit(w http.ResponseWriter, r *http.Request) {
 			s.serverError(w, r, terr)
 			return
 		}
-		if serr := s.sendPasswordResetEmail(r.Context(), userLang(user, r), user, raw); serr != nil {
-			// Don't leak delivery failures to the caller, but do record them.
-			s.log.Warn("send password reset email", "user", user.Username, "err", serr)
-		} else {
-			s.audit.Record(r.Context(), user.Username, audit.ActionPasswordReset, "", "requested", ip)
-		}
+		// Deliver in the background: waiting for the mail server would make
+		// the answer measurably slower for existing accounts, telling them
+		// apart despite the neutral page.
+		lang := userLang(user, r)
+		ctx := context.WithoutCancel(r.Context())
+		go func() {
+			ctx, cancel := context.WithTimeout(ctx, time.Minute)
+			defer cancel()
+			if serr := s.sendPasswordResetEmail(ctx, lang, user, raw); serr != nil {
+				// Not shown to the caller, but recorded.
+				s.log.Warn("send password reset email", "user", user.Username, "err", serr)
+				return
+			}
+			s.audit.Record(ctx, user.Username, audit.ActionPasswordReset, "", "requested", ip)
+		}()
 	}
 	neutral()
 }
