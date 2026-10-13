@@ -429,6 +429,10 @@ func (s *Server) Handler() http.Handler {
 				// Turn op's bare 400 for an unknown client / unregistered
 				// redirect_uri into a branded, actionable error page.
 				root.Handle(pattern, s.guardAuthorize(s.oidc))
+			case "/oauth/", "/userinfo":
+				// Token, introspection, revocation and userinfo answers
+				// carry tokens or personal data: never cache them.
+				root.Handle(pattern, noStore(s.oidc))
 			default:
 				root.Handle(pattern, s.oidc)
 			}

@@ -77,6 +77,16 @@ func limitRequestBodies(next http.Handler) http.Handler {
 	})
 }
 
+// noStore marks responses as not cacheable (RFC 6749 §5.1 for the token
+// endpoint).
+func noStore(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Pragma", "no-cache")
+		next.ServeHTTP(w, r)
+	})
+}
+
 // applyEffectiveAdmin makes user.IsAdmin the effective role, not just the
 // stored flag: membership in a granting group confers it for the duration
 // of the request.
