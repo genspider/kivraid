@@ -408,13 +408,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Reveal/hide toggle for masked secrets (eye ↔ eye-off).
   for (const btn of document.querySelectorAll("[data-secret-toggle]")) {
+    const password = btn.getAttribute("aria-label") === tr("Show password");
     btn.addEventListener("click", () => {
       const field = btn.parentElement.querySelector("[data-secret]");
       const shown = field.type === "text";
       field.type = shown ? "password" : "text";
       btn.querySelector("[data-eye]").classList.toggle("hidden", !shown);
       btn.querySelector("[data-eye-off]").classList.toggle("hidden", shown);
-      btn.setAttribute("aria-label", shown ? tr("Show secret") : tr("Hide secret"));
+      btn.setAttribute(
+        "aria-label",
+        password
+          ? tr(shown ? "Show password" : "Hide password")
+          : tr(shown ? "Show secret" : "Hide secret"),
+      );
     });
   }
 
@@ -708,7 +714,7 @@ function isCeremonyCancel(err) {
 
 async function registerPasskey(name) {
   const begin = await waPost("/profile/passkeys/begin");
-  if (!begin.ok) throw new Error("Could not start registration.");
+  if (!begin.ok) throw new Error(tr("Could not start registration."));
   const opts = (await begin.json()).publicKey;
   opts.challenge = b64urlToBuf(opts.challenge);
   opts.user.id = b64urlToBuf(opts.user.id);
@@ -727,12 +733,12 @@ async function registerPasskey(name) {
       },
     },
   );
-  if (!finish.ok) throw new Error("The passkey could not be registered.");
+  if (!finish.ok) throw new Error(tr("The passkey could not be registered."));
 }
 
 async function loginWithPasskey(next) {
   const begin = await waPost("/login/passkey/begin");
-  if (!begin.ok) throw new Error("Could not start passkey sign-in.");
+  if (!begin.ok) throw new Error(tr("Could not start passkey sign-in."));
   const opts = (await begin.json()).publicKey;
   opts.challenge = b64urlToBuf(opts.challenge);
   for (const c of opts.allowCredentials || []) c.id = b64urlToBuf(c.id);
@@ -754,7 +760,7 @@ async function loginWithPasskey(next) {
       },
     },
   );
-  if (!finish.ok) throw new Error("That passkey wasn't recognized.");
+  if (!finish.ok) throw new Error(tr("That passkey wasn't recognized."));
   const data = await finish.json();
   window.location.href = data.next || "/";
 }
@@ -792,7 +798,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const err = document.querySelector("[data-passkeys] [data-passkey-error]");
     addBtn.addEventListener("click", async () => {
       if (err) err.hidden = true;
-      const name = (nameInput?.value || "").trim() || "Passkey";
+      const name = (nameInput?.value || "").trim() || tr("Passkey");
       addBtn.disabled = true;
       try {
         await registerPasskey(name);

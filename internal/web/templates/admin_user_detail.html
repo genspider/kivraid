@@ -9,7 +9,7 @@
   <div class="min-w-0">
     <div class="flex items-center gap-2">
       <h2 class="truncate page-title">{{.Data.Target.Name}}</h2>
-      {{if or .Data.Target.IsAdmin .Data.AdminGroups}}<span class="badge-accent">Admin</span>{{end}}
+      {{if or .Data.Target.IsAdmin .Data.AdminGroups}}<span class="badge-accent">{{t "Admin"}}</span>{{end}}
       {{if not .Data.Target.Active}}<span class="badge">{{t "Deactivated"}}</span>{{end}}
       {{if .Data.IsLDAP}}<span class="badge">{{if .Data.SourceName}}{{.Data.SourceName}}{{else}}LDAP{{end}}</span>{{else if eq .Data.Target.Source "upstream"}}<span class="badge">{{t "Federated"}}</span>{{else}}<span class="badge">{{t "Local"}}</span>{{end}}
     </div>

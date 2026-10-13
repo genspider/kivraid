@@ -73,7 +73,7 @@
         <td class="hidden whitespace-nowrap text-muted lg:table-cell">{{if .LastLoginAt.Valid}}{{since .LastLoginAt.Time}}{{else}}{{t "Never"}}{{end}}</td>
         <td class="whitespace-nowrap">
           <div class="flex flex-wrap gap-1">
-            {{if or .IsAdmin (index $.Data.AdminVia .ID)}}<span class="badge-accent">Admin</span>{{end}}
+            {{if or .IsAdmin (index $.Data.AdminVia .ID)}}<span class="badge-accent">{{t "Admin"}}</span>{{end}}
             {{if not .Active}}<span class="badge">{{t "Deactivated"}}</span>{{end}}
             {{if .TotpEnabled}}<span class="badge">{{t "2FA"}}</span>{{end}}
           </div>

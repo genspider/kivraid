@@ -145,8 +145,9 @@
     </span>
     <form method="post" action="/admin/applications/{{.Data.App.ID}}/icon" enctype="multipart/form-data" class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
       <input type="hidden" name="_csrf" value="{{.CSRF}}">
-      <input type="file" name="icon" accept="image/jpeg,image/png,image/webp,image/gif" required data-autoupload data-max-bytes="1048576"
-             class="min-w-0 flex-1 text-sm text-muted file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-fg hover:file:bg-raised">
+      <label class="btn-secondary file-pick shrink-0">{{t "Choose an image"}}
+        <input type="file" name="icon" accept="image/jpeg,image/png,image/webp,image/gif" required data-autoupload data-max-bytes="1048576" aria-label="{{t "Icon"}}" class="sr-only">
+      </label>
       <button type="submit" class="btn-secondary shrink-0" data-upload-button>{{t "Upload"}}</button>
     </form>
     {{if .Data.App.IconMime}}

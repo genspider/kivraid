@@ -153,7 +153,9 @@ var jsMessages = []string{
 	"Use an authenticator code instead", "Lost your device? Use a recovery code",
 	"Passkey sign-in failed.", "Passkey added.", "Could not add passkey.",
 	"Remove %s", "Show secret", "Hide secret", "This browser does not support passkeys.",
-	"Please confirm", "Dismiss",
+	"Please confirm", "Dismiss", "Show password", "Hide password",
+	"Could not start registration.", "The passkey could not be registered.",
+	"Could not start passkey sign-in.", "That passkey wasn't recognized.", "Passkey",
 }
 
 func jsI18n(lang string) string {

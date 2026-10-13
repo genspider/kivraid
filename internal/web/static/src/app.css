@@ -609,6 +609,13 @@
     display: none;
   }
 
+  /* A file picker shown as a translated button (the native one speaks the
+   * browser's language); the real input sits inside, visually hidden. */
+  .file-pick:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
   .code-box {
     @apply block truncate rounded-lg border border-line bg-raised px-3 py-2 font-mono text-[13px];
   }
