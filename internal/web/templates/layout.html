@@ -80,7 +80,7 @@
     <h1 class="page-heading mb-6">{{t "Administration"}}</h1>
     <div class="flex flex-col gap-4 md:flex-row md:gap-6 xl:gap-10">
       {{template "adminnav" .}}
-      <main class="min-w-0 max-w-5xl flex-1">{{block "content" .}}{{end}}</main>
+      <main class="min-w-0 max-w-5xl flex-1">{{template "content" .}}</main>
     </div>
   </div>
   {{else if eq $section "account"}}
@@ -101,34 +101,34 @@
 
 {{define "adminnav"}}
 {{$a := .Active}}
-<nav class="sidenav" aria-label="{{t "Administration"}}" data-sidenav>
-  <a href="/admin" class="sidenav-link {{if eq $a "dashboard"}}sidenav-active{{end}}">{{t "Overview"}}</a>
+<nav class="sidenav" aria-label="{{t "Administration"}}">
+  <a href="/admin" class="sidenav-link {{if eq $a "dashboard"}}sidenav-active{{end}}" {{if eq $a "dashboard"}}aria-current="page"{{end}}>{{t "Overview"}}</a>
   <h4 class="sidenav-title">{{t "Applications"}}</h4>
-  <a href="/admin/applications" class="sidenav-link {{if eq $a "apps"}}sidenav-active{{end}}">{{t "Applications"}}</a>
+  <a href="/admin/applications" class="sidenav-link {{if eq $a "apps"}}sidenav-active{{end}}" {{if eq $a "apps"}}aria-current="page"{{end}}>{{t "Applications"}}</a>
   <h4 class="sidenav-title">{{t "Accounts"}}</h4>
-  <a href="/admin/users" class="sidenav-link {{if eq $a "users"}}sidenav-active{{end}}">{{t "Users"}}</a>
-  <a href="/admin/groups" class="sidenav-link {{if eq $a "groups"}}sidenav-active{{end}}">{{t "Groups"}}</a>
+  <a href="/admin/users" class="sidenav-link {{if eq $a "users"}}sidenav-active{{end}}" {{if eq $a "users"}}aria-current="page"{{end}}>{{t "Users"}}</a>
+  <a href="/admin/groups" class="sidenav-link {{if eq $a "groups"}}sidenav-active{{end}}" {{if eq $a "groups"}}aria-current="page"{{end}}>{{t "Groups"}}</a>
   <h4 class="sidenav-title">{{t "Identity sources"}}</h4>
-  <a href="/admin/ldap" class="sidenav-link {{if eq $a "ldap"}}sidenav-active{{end}}">{{t "Directories"}}</a>
-  <a href="/admin/providers" class="sidenav-link {{if eq $a "providers"}}sidenav-active{{end}}">{{t "Providers"}}</a>
-  <a href="/admin/routing" class="sidenav-link {{if eq $a "routing"}}sidenav-active{{end}}">{{t "Login routing"}}</a>
+  <a href="/admin/ldap" class="sidenav-link {{if eq $a "ldap"}}sidenav-active{{end}}" {{if eq $a "ldap"}}aria-current="page"{{end}}>{{t "Directories"}}</a>
+  <a href="/admin/providers" class="sidenav-link {{if eq $a "providers"}}sidenav-active{{end}}" {{if eq $a "providers"}}aria-current="page"{{end}}>{{t "Providers"}}</a>
+  <a href="/admin/routing" class="sidenav-link {{if eq $a "routing"}}sidenav-active{{end}}" {{if eq $a "routing"}}aria-current="page"{{end}}>{{t "Login routing"}}</a>
   <h4 class="sidenav-title">{{t "Settings"}}</h4>
-  <a href="/admin/settings/branding" class="sidenav-link {{if eq $a "branding"}}sidenav-active{{end}}">{{t "Branding"}}</a>
-  <a href="/admin/settings/email" class="sidenav-link {{if eq $a "email"}}sidenav-active{{end}}">{{t "Email"}}</a>
-  <a href="/admin/settings/security" class="sidenav-link {{if eq $a "security"}}sidenav-active{{end}}">{{t "Security"}}</a>
+  <a href="/admin/settings/branding" class="sidenav-link {{if eq $a "branding"}}sidenav-active{{end}}" {{if eq $a "branding"}}aria-current="page"{{end}}>{{t "Branding"}}</a>
+  <a href="/admin/settings/email" class="sidenav-link {{if eq $a "email"}}sidenav-active{{end}}" {{if eq $a "email"}}aria-current="page"{{end}}>{{t "Email"}}</a>
+  <a href="/admin/settings/security" class="sidenav-link {{if eq $a "security"}}sidenav-active{{end}}" {{if eq $a "security"}}aria-current="page"{{end}}>{{t "Security"}}</a>
   <h4 class="sidenav-title">{{t "System"}}</h4>
-  <a href="/admin/settings/system" class="sidenav-link {{if eq $a "system"}}sidenav-active{{end}}">{{t "Diagnostics"}}</a>
-  <a href="/admin/audit" class="sidenav-link {{if eq $a "audit"}}sidenav-active{{end}}">{{t "Activity"}}</a>
+  <a href="/admin/settings/system" class="sidenav-link {{if eq $a "system"}}sidenav-active{{end}}" {{if eq $a "system"}}aria-current="page"{{end}}>{{t "Diagnostics"}}</a>
+  <a href="/admin/audit" class="sidenav-link {{if eq $a "audit"}}sidenav-active{{end}}" {{if eq $a "audit"}}aria-current="page"{{end}}>{{t "Activity"}}</a>
 </nav>
 {{end}}
 
 {{define "accountnav"}}
 {{$a := .Active}}
-<nav class="sidenav" aria-label="{{t "Account settings"}}" data-sidenav>
-  <a href="/profile" class="sidenav-link {{if eq $a "profile"}}sidenav-active{{end}}">{{t "Profile"}}</a>
-  <a href="/profile/password" class="sidenav-link {{if eq $a "password"}}sidenav-active{{end}}">{{t "Password"}}</a>
-  <a href="/profile/security" class="sidenav-link {{if eq $a "security-account"}}sidenav-active{{end}}">{{t "Two-factor & passkeys"}}</a>
-  <a href="/sessions" class="sidenav-link {{if eq $a "sessions"}}sidenav-active{{end}}">{{t "Sessions"}}</a>
+<nav class="sidenav" aria-label="{{t "Account settings"}}">
+  <a href="/profile" class="sidenav-link {{if eq $a "profile"}}sidenav-active{{end}}" {{if eq $a "profile"}}aria-current="page"{{end}}>{{t "Profile"}}</a>
+  <a href="/profile/password" class="sidenav-link {{if eq $a "password"}}sidenav-active{{end}}" {{if eq $a "password"}}aria-current="page"{{end}}>{{t "Password"}}</a>
+  <a href="/profile/security" class="sidenav-link {{if eq $a "security-account"}}sidenav-active{{end}}" {{if eq $a "security-account"}}aria-current="page"{{end}}>{{t "Two-factor & passkeys"}}</a>
+  <a href="/sessions" class="sidenav-link {{if eq $a "sessions"}}sidenav-active{{end}}" {{if eq $a "sessions"}}aria-current="page"{{end}}>{{t "Sessions"}}</a>
 </nav>
 {{end}}
 
@@ -254,10 +254,10 @@
 
 {{/* Section titles of the federation and settings pages, whose sections
    are now entries of the admin side menu. */}}
-{{define "federationtabs"}}
+{{define "federationtitle"}}
 <h2 class="page-title mb-2">{{if eq .Active "routing"}}{{t "Login routing"}}{{else}}{{t "Providers"}}{{end}}</h2>
 {{end}}
-{{define "settingstabs"}}
+{{define "settingstitle"}}
 <h2 class="page-title mb-2">{{if eq .Active "branding"}}{{t "Branding"}}{{else if eq .Active "email"}}{{t "Email"}}{{else if eq .Active "security"}}{{t "Security"}}{{else}}{{t "Diagnostics"}}{{end}}</h2>
 {{end}}
 
