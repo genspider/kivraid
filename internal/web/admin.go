@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -246,15 +247,33 @@ func ttlField(raw string, def int64) string {
 	return raw
 }
 
-// parseHostList reads one host[:port] per line.
+// parseHostList reads one host[:port] per line, lowercased and without a
+// trailing dot (the form forward auth compares, see normalizeHost).
 func parseHostList(raw string) []string {
 	var out []string
 	for _, line := range strings.Split(raw, "\n") {
 		if line = strings.TrimSpace(line); line != "" {
-			out = append(out, strings.ToLower(line))
+			out = append(out, trimHostDot(strings.ToLower(line)))
 		}
 	}
 	return out
+}
+
+// hostEntry is a bare hostname with an optional port: no scheme, path,
+// wildcard or user info.
+var hostEntry = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:[0-9]{1,5})?$`)
+
+// invalidHost returns the first entry that is not a bare host[:port], or
+// "". Forward auth matches hosts exactly, so an entry such as
+// "https://app.example.com" or "*.example.com" would never match and leave
+// the application unprotected by its policy.
+func invalidHost(hosts []string) string {
+	for _, h := range hosts {
+		if !hostEntry.MatchString(h) {
+			return h
+		}
+	}
+	return ""
 }
 
 // validate checks common fields and, for OIDC apps, the redirect URIs.
@@ -277,8 +296,12 @@ func (f *appForm) validate() (redirects, postLogout []string, err error) {
 		}
 	}
 	if f.Kind == "proxy" {
-		if len(parseHostList(f.ProxyHosts)) == 0 {
+		hosts := parseHostList(f.ProxyHosts)
+		if len(hosts) == 0 {
 			return nil, nil, errorf("At least one protected host is required.")
+		}
+		if bad := invalidHost(hosts); bad != "" {
+			return nil, nil, errorf("Protected hosts: %q is not a host name. Enter one host per line, such as app.example.com, without https:// or a path.", bad)
 		}
 		return nil, nil, nil
 	}

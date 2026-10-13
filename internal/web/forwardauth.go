@@ -99,12 +99,24 @@ func (s *Server) forwardAuthRedirect(w http.ResponseWriter, r *http.Request, pat
 	http.Error(w, "unauthorized", http.StatusUnauthorized)
 }
 
-// normalizeHost lowercases host and strips any port.
+// normalizeHost lowercases host and strips any port and trailing dot. The
+// trailing dot matters: "app.example.com." is the same host to DNS and to
+// some proxies' routing (Traefik), and must not slip past the policy of
+// the application registered for "app.example.com".
 func normalizeHost(host string) string {
 	if h, _, err := net.SplitHostPort(host); err == nil {
 		host = h
 	}
-	return strings.ToLower(host)
+	return trimHostDot(strings.ToLower(host))
+}
+
+// trimHostDot removes the trailing dot(s) of a fully qualified host name,
+// keeping any port.
+func trimHostDot(host string) string {
+	if h, port, err := net.SplitHostPort(host); err == nil {
+		return net.JoinHostPort(strings.TrimRight(h, "."), port)
+	}
+	return strings.TrimRight(host, ".")
 }
 
 // forwardHostAllowed reports whether host may be a post-login redirect

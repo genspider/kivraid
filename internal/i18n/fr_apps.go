@@ -16,9 +16,10 @@ func init() {
 
 		// Form validation.
 		"Name is required.": "Le nom est obligatoire.",
-		"Slug must contain at least one letter or digit.":                           "Le slug doit contenir au moins une lettre ou un chiffre.",
-		"Launch URL must be a valid absolute URL.":                                  "L'URL de lancement doit être une URL absolue valide.",
-		"At least one protected host is required.":                                  "Au moins un hôte protégé est obligatoire.",
+		"Slug must contain at least one letter or digit.": "Le slug doit contenir au moins une lettre ou un chiffre.",
+		"Launch URL must be a valid absolute URL.":        "L'URL de lancement doit être une URL absolue valide.",
+		"At least one protected host is required.":        "Au moins un hôte protégé est obligatoire.",
+		"Protected hosts: %q is not a host name. Enter one host per line, such as app.example.com, without https:// or a path.": "Hôtes protégés : %q n'est pas un nom d'hôte. Saisissez un hôte par ligne, par exemple app.example.com, sans https:// ni chemin.",
 		"At least one redirect URI is required.":                                    "Au moins une URI de redirection est obligatoire.",
 		"Redirect URIs: %q is not an absolute URI":                                  "URI de redirection : %q n'est pas une URI absolue",
 		"Post-logout redirect URIs: %q is not an absolute URI":                      "URI de redirection après déconnexion : %q n'est pas une URI absolue",
