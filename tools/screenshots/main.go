@@ -404,7 +404,7 @@ func captureAll() (map[string][2][]byte, error) {
 
 	// Sign-in page. Each page gets the viewport height that frames its
 	// content without dead space below.
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1440, 900, chromedp.EmulateScale(2)),
 		chromedp.Navigate(baseURL+"/login"),
 		chromedp.WaitVisible(`#username`),
@@ -419,7 +419,7 @@ func captureAll() (map[string][2][]byte, error) {
 
 	// Log in (identifier-first: username, then password on the next step),
 	// then the portal launcher.
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.SendKeys(`#username`, adminUser),
 		chromedp.Click(`form[action="/login"] button[type=submit]`),
 		chromedp.WaitVisible(`#password`),
@@ -436,7 +436,7 @@ func captureAll() (map[string][2][]byte, error) {
 	shots["portal"] = pair
 
 	// Admin console: applications.
-	if err := chromedp.Run(ctx,
+	if err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(1440, 840, chromedp.EmulateScale(2)),
 		chromedp.Navigate(baseURL+"/admin/applications"),
 		chromedp.WaitVisible(`h1`),
@@ -459,12 +459,14 @@ func captureThemes(ctx context.Context) ([2][]byte, error) {
 			`localStorage.setItem("kivraid-theme", %[1]q);
 			 document.documentElement.dataset.theme = %[1]q;
 			 if (document.activeElement) document.activeElement.blur();`, theme)
-		var buf []byte
-		if err := chromedp.Run(ctx,
-			chromedp.Evaluate(script, nil),
+		if err := chromedp.Do(ctx,
+			chromedp.Evaluate[chromedp.Void](script),
 			chromedp.Sleep(400*time.Millisecond),
-			chromedp.CaptureScreenshot(&buf),
 		); err != nil {
+			return out, err
+		}
+		buf, err := chromedp.Run(ctx, chromedp.CaptureScreenshot())
+		if err != nil {
 			return out, err
 		}
 		out[i] = buf
