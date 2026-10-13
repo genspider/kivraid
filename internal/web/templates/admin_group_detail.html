@@ -21,7 +21,7 @@
 
   <form method="post" action="/admin/groups/{{.Data.Group.ID}}" class="card space-y-4 p-6">
     <input type="hidden" name="_csrf" value="{{.CSRF}}">
-    <h2 class="text-sm font-semibold">{{t "Settings"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "Settings"}}</h3>
     {{if .Data.Editable}}
     <div>
       <label class="label" for="name">{{t "Name"}}</label>
@@ -42,7 +42,7 @@
 
   <div class="card">
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-line p-4">
-      <h2 class="text-sm font-semibold">{{t "Members"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Members"}}</h3>
       {{if .Data.Editable}}
       <form method="post" action="/admin/groups/{{.Data.Group.ID}}/members" class="flex min-w-0 flex-wrap items-center gap-2">
         <input type="hidden" name="_csrf" value="{{.CSRF}}">
@@ -87,7 +87,7 @@
 
   <div class="card">
     <div class="border-b border-line p-4">
-      <h2 class="text-sm font-semibold">{{t "Applications"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Applications"}}</h3>
       <p class="mt-0.5 text-xs text-muted">{{t "Applications restricted to members of this group."}}</p>
     </div>
     {{if .Data.Apps}}
@@ -105,7 +105,7 @@
   </div>
 
   <div class="card border-danger/25 p-6">
-    <h2 class="text-sm font-semibold text-danger">{{t "Danger zone"}}</h2>
+    <h3 class="text-sm font-semibold text-danger">{{t "Danger zone"}}</h3>
     <div class="mt-3 flex items-center justify-between gap-4">
       <p class="text-sm text-muted">
         {{t "Deleting removes the group and its memberships."}}

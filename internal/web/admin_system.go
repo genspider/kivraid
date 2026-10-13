@@ -159,7 +159,7 @@ func (s *Server) handleAdminSystem(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s.render(w, r, "admin_system.html", pageData{
-		Title: "System", Active: "system", CSRF: s.csrfToken(r.Context()),
+		Title: "Diagnostics", Active: "system", CSRF: s.csrfToken(r.Context()),
 		User: currentUser(r), Data: data,
 	})
 }

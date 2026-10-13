@@ -30,7 +30,7 @@
 
   <form method="post" action="/admin/users/{{.Data.Target.ID}}" class="card space-y-5 p-6">
     <input type="hidden" name="_csrf" value="{{.CSRF}}">
-    <h2 class="text-sm font-semibold">{{t "Account"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "Account"}}</h3>
     {{if .Data.IsLDAP}}
     <p class="text-xs text-muted">{{t "Identity (name, email, photo) is mirrored from the directory at each sign-in and cannot be edited here."}}</p>
     <dl class="grid grid-cols-1 gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
@@ -71,7 +71,7 @@
 
   <div class="card p-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 class="text-sm font-semibold">{{t "Groups"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Groups"}}</h3>
       {{if .Data.AddableGroups}}
       <form method="post" action="/admin/users/{{.Data.Target.ID}}/groups" class="flex items-center gap-2">
         <input type="hidden" name="_csrf" value="{{.CSRF}}">
@@ -102,7 +102,7 @@
   </div>
 
   <div class="card p-6">
-    <h2 class="text-sm font-semibold">{{t "Two-factor authentication"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "Two-factor authentication"}}</h3>
     <div class="mt-3 flex items-center justify-between gap-4">
       {{if .Data.Target.TotpEnabled}}
       <span class="flex items-center gap-2 text-sm"><span class="badge-accent">{{t "Enabled"}}</span></span>
@@ -124,7 +124,7 @@
         <li class="flex items-center justify-between gap-3 py-2.5">
           <div class="min-w-0">
             <div class="truncate text-sm font-medium">{{.Name}}</div>
-            <div class="text-xs text-faint">{{if .LastUsedAt.Valid}}{{t "Added %s · last used %s" (since .CreatedAt) (since .LastUsedAt.Time)}}{{else}}{{t "Added %s · never used" (since .CreatedAt)}}{{end}}</div>
+            <div class="text-xs text-faint">{{if .LastUsedAt.Valid}}{{t "Added %s · last used %s" (date .CreatedAt) (date .LastUsedAt.Time)}}{{else}}{{t "Added %s · never used" (date .CreatedAt)}}{{end}}</div>
           </div>
           <form method="post" action="/admin/users/{{$.Data.Target.ID}}/passkeys/{{.ID}}/delete" class="shrink-0"
                 data-confirm="{{t "Remove the passkey “%s”? The user will no longer be able to sign in with it." .Name}}"
@@ -145,7 +145,7 @@
   <div class="card p-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="min-w-0">
-        <h2 class="text-sm font-semibold">{{t "Email verification"}}</h2>
+        <h3 class="text-sm font-semibold">{{t "Email verification"}}</h3>
         <p class="mt-1 text-sm text-muted">{{if .Data.EmailVerified}}{{t "This address is verified."}}{{else}}{{t "This address has not been verified yet."}}{{end}}</p>
       </div>
       {{if .Data.EmailVerified}}
@@ -178,7 +178,7 @@
         data-confirm="{{t "%s will need this password to sign in, and is signed out everywhere." .Data.Target.Name}}"
         data-confirm-title="{{t "Reset password"}}" data-confirm-label="{{t "Reset"}}">
     <input type="hidden" name="_csrf" value="{{.CSRF}}">
-    <h2 class="text-sm font-semibold">{{t "Reset password"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "Reset password"}}</h3>
     {{if .Data.IsLDAP}}<p class="-mt-2 text-xs text-muted">{{t "Sets the password directly in the directory, using the service account."}}</p>{{end}}
     <div class="flex items-end gap-3">
       <div class="flex-1">
@@ -215,7 +215,7 @@
 
   <div class="card p-6">
     <div class="flex items-center justify-between gap-4">
-      <h2 class="text-sm font-semibold">{{t "Sessions"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Sessions"}}</h3>
       {{if .Data.Sessions}}
       <form method="post" action="/admin/users/{{.Data.Target.ID}}/sessions/revoke" class="shrink-0"
             data-confirm="{{t "Sign %s out of every session and revoke their tokens? They will have to sign in again." .Data.Target.Username}}"
@@ -257,7 +257,7 @@
   <div class="card p-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="min-w-0">
-        <h2 class="text-sm font-semibold">{{t "Impersonate"}}</h2>
+        <h3 class="text-sm font-semibold">{{t "Impersonate"}}</h3>
         <p class="mt-1 text-sm text-muted">{{t "View Kivraid as this user to reproduce what they see. A banner lets you return to your own account, and the switch is recorded in the activity log."}}</p>
       </div>
       <form method="post" action="/admin/users/{{.Data.Target.ID}}/impersonate" class="shrink-0"
@@ -273,7 +273,7 @@
 
   {{if not .Data.Self}}
   <div class="card border-danger/25 p-6">
-    <h2 class="text-sm font-semibold text-danger">{{t "Danger zone"}}</h2>
+    <h3 class="text-sm font-semibold text-danger">{{t "Danger zone"}}</h3>
     <div class="mt-3 flex items-center justify-between gap-4">
       <p class="text-sm text-muted">
         {{t "Deleting revokes every session and token immediately."}}

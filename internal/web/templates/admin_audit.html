@@ -83,10 +83,10 @@
   {{icon "clock" "size-8 text-faint"}}
   <div>
     {{if .Data.Filtered}}
-    <h2 class="text-sm font-semibold">{{t "No matching events"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "No matching events"}}</h3>
     <p class="mt-1 text-sm text-muted">{{t "No events match this filter."}} <a href="/admin/audit" class="underline">{{t "Clear it"}}</a> {{t "to see everything."}}</p>
     {{else}}
-    <h2 class="text-sm font-semibold">{{t "No activity yet"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "No activity yet"}}</h3>
     <p class="mt-1 text-sm text-muted">{{t "Logins, password changes and admin actions will appear here."}}</p>
     {{end}}
   </div>

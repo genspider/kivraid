@@ -9,7 +9,7 @@
   <form method="post" action="/admin/settings/security" class="card space-y-5 p-6">
     <input type="hidden" name="_csrf" value="{{.CSRF}}">
     <div>
-      <h2 class="text-sm font-semibold">{{t "Two-factor authentication"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Two-factor authentication"}}</h3>
       <p class="mt-1 text-sm text-muted">{{t "Who must sign in with a second factor: an authenticator code, a passkey, or an upstream identity provider (which owns authentication for federated users). Anyone required but not enrolled is asked to set it up before going further, and cannot turn it off."}}</p>
     </div>
     <div class="grid gap-2 sm:grid-cols-3">
@@ -27,7 +27,7 @@
     <p class="text-xs text-muted">{{t "To require it for a single application only, use the option in that application's Access section."}}</p>
 
     <div class="border-t border-line pt-5">
-      <h2 class="text-sm font-semibold">{{t "Sign-in alerts"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Sign-in alerts"}}</h3>
       <label class="mt-3 flex cursor-pointer items-start gap-2 text-sm">
         <input type="checkbox" name="new_device_alerts" class="mt-0.5 accent-accent" {{if .Data.NewDeviceAlerts}}checked{{end}}>
         <span>
@@ -38,7 +38,7 @@
       {{if not .Data.CanEmail}}<p class="mt-2 text-xs text-warn">{{t "Email delivery is not configured: no alert will be sent until it is (Settings → Email)."}}</p>{{end}}
     </div>
     <div class="border-t border-line pt-5">
-      <h2 class="text-sm font-semibold">{{t "Passwords"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Passwords"}}</h3>
       <p class="mt-1 text-sm text-muted">{{t "Applies to every new password set through Kivraid, for local and directory accounts. Existing passwords stay valid until they are changed."}}</p>
       <label for="password_min_length" class="label mt-3">{{t "Minimum length"}}</label>
       <select id="password_min_length" name="password_min_length" class="select w-auto">
@@ -54,7 +54,7 @@
     </div>
 
     <div class="border-t border-line pt-5">
-      <h2 class="text-sm font-semibold">{{t "Token signing key"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Token signing key"}}</h3>
       <p class="mt-1 text-sm text-muted">{{t "How often to replace the key that signs ID and access tokens. Previous keys stay published for 7 days, then are retired. You can also rotate now from Settings → System."}}</p>
       <select name="key_rotation_days" class="select mt-3 w-auto" aria-label="{{t "Automatic key rotation"}}">
         {{range .Data.RotationChoices}}<option value="{{.}}" {{if eq . $.Data.RotationDays}}selected{{end}}>{{if eq . 0}}{{t "Manual only"}}{{else}}{{tn . "Every %d day" "Every %d days"}}{{end}}</option>{{end}}
@@ -62,7 +62,7 @@
     </div>
 
     <div class="border-t border-line pt-5">
-      <h2 class="text-sm font-semibold">{{t "Activity log retention"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Activity log retention"}}</h3>
       <p class="mt-1 text-sm text-muted">{{t "Older events are deleted automatically. Export them to CSV first if you need a longer record."}}</p>
       <select name="audit_retention_days" class="select mt-3 w-auto" aria-label="{{t "Activity log retention"}}">
         {{range .Data.RetentionChoices}}<option value="{{.}}" {{if eq . $.Data.RetentionDays}}selected{{end}}>{{if eq . 0}}{{t "Keep forever"}}{{else if eq . 365}}{{t "1 year"}}{{else}}{{tn . "%d day" "%d days"}}{{end}}</option>{{end}}

@@ -73,8 +73,8 @@
         <td class="hidden whitespace-nowrap text-muted lg:table-cell">{{if .LastLoginAt.Valid}}{{since .LastLoginAt.Time}}{{else}}{{t "Never"}}{{end}}</td>
         <td class="whitespace-nowrap">
           <div class="flex flex-wrap gap-1">
+            {{if .Active}}<span class="badge-tone tone-plain">{{t "Active"}}</span>{{else}}<span class="badge-tone tone-warn">{{t "Deactivated"}}</span>{{end}}
             {{if or .IsAdmin (index $.Data.AdminVia .ID)}}<span class="badge-accent">{{t "Admin"}}</span>{{end}}
-            {{if not .Active}}<span class="badge">{{t "Deactivated"}}</span>{{end}}
             {{if .TotpEnabled}}<span class="badge">{{t "2FA"}}</span>{{end}}
           </div>
         </td>
@@ -99,10 +99,10 @@
   {{icon "users" "size-8 text-faint"}}
   <div>
     {{if .Data.Query}}
-    <h2 class="text-sm font-semibold">{{t "No users match “%s”" .Data.Query}}</h2>
+    <h3 class="text-sm font-semibold">{{t "No users match “%s”" .Data.Query}}</h3>
     <p class="mt-1 text-sm text-muted">{{t "Try a different name, username or email."}}</p>
     {{else}}
-    <h2 class="text-sm font-semibold">{{t "No users yet"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "No users yet"}}</h3>
     <p class="mt-1 text-sm text-muted">{{t "Create a local account or connect an LDAP directory."}}</p>
     {{end}}
   </div>

@@ -10,7 +10,7 @@
   <div class="card flex flex-col items-center gap-3 px-6 py-16 text-center">
     {{icon "branch" "size-8 text-faint"}}
     <div>
-      <h2 class="text-sm font-semibold">{{t "Add a provider first"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Add a provider first"}}</h3>
       <p class="mt-1 text-sm text-muted">{{t "Routing sends users to an upstream identity provider. Until one exists, everyone signs in with a local or directory password."}}</p>
     </div>
     <a href="/admin/providers/new" class="btn-primary">{{t "New provider"}}</a>
@@ -19,7 +19,7 @@
   <form method="post" action="/admin/routing/default" class="card flex flex-wrap items-end gap-3 p-6">
     <input type="hidden" name="_csrf" value="{{.CSRF}}">
     <div class="min-w-56 flex-1">
-      <h2 class="text-sm font-semibold">{{t "Default"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Default"}}</h3>
       <p class="mb-3 mt-1 text-sm text-muted">{{t "Where identifiers go when no rule matches."}}</p>
       <label class="label" for="default_target">{{t "Default target"}}</label>
       <select class="select" id="default_target" name="target">
@@ -31,7 +31,7 @@
   </form>
 
   <div class="card p-6">
-    <h2 class="text-sm font-semibold">{{t "Rules"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "Rules"}}</h3>
     {{if .Data.Rules}}
     <div class="mt-4 divide-y divide-line border-t border-line">
       {{range .Data.Rules}}
@@ -55,7 +55,7 @@
 
   <form method="post" action="/admin/routing" class="card space-y-4 p-6">
     <input type="hidden" name="_csrf" value="{{.CSRF}}">
-    <h2 class="text-sm font-semibold">{{t "Add a rule"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "Add a rule"}}</h3>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div>
         <label class="label" for="kind">{{t "Match on"}}</label>

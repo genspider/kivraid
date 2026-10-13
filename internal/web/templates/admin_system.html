@@ -22,7 +22,7 @@
     {{if .Data.KeyRotated}}<div data-flash="{{t "Signing key rotated."}}" data-variant="success" hidden></div>{{end}}
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="min-w-0">
-        <h2 class="text-sm font-semibold">{{t "Signing keys"}}</h2>
+        <h3 class="text-sm font-semibold">{{t "Signing keys"}}</h3>
         <p class="mt-1 text-sm text-muted">
           {{t "Active algorithm"}} <code class="code-inline">{{.Data.SigningAlg}}</code> ·
           {{tn .Data.PublishedKeys "%d key published in the JWKS." "%d keys published in the JWKS."}}
@@ -41,7 +41,7 @@
   {{end}}
 
   <div class="card p-6">
-    <h2 class="text-sm font-semibold">{{t "Request diagnostics"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "Request diagnostics"}}</h3>
     <p class="mb-4 mt-1 text-sm text-muted">{{t "How Kivraid sees the request that loaded this page — use it to check client-IP resolution behind a reverse proxy."}}</p>
     <dl class="divide-y divide-line">
       {{range .Data.Request}}

@@ -44,7 +44,7 @@ func (s *Server) handleMFABegin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) renderMFAEnroll(w http.ResponseWriter, r *http.Request, secret, errMsg string) {
 	s.render(w, r, "mfa_enroll.html", pageData{
-		Title: "Two-factor", Active: "security-account", CSRF: s.csrfToken(r.Context()),
+		Title: "Set up two-factor", Active: "security-account", CSRF: s.csrfToken(r.Context()),
 		User: currentUser(r),
 		Data: mfaEnrollData{SecretRaw: secret, Secret: mfa.FormatSecret(secret), Error: errMsg},
 	})

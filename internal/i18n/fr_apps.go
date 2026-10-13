@@ -45,7 +45,7 @@ func init() {
 		"Filter applications":                "Filtrer les applications",
 		"Forward auth":                       "Forward auth",
 		"Public · PKCE":                      "Public · PKCE",
-		"2FA required":                       "2FA requise",
+		"2FA required":                       "Double authentification requise",
 		"Locked: no group":                   "Verrouillée : aucun groupe",
 		"Everyone":                           "Tout le monde",
 		"No applications match your filter.": "Aucune application ne correspond à votre filtre.",

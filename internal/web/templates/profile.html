@@ -52,7 +52,7 @@
     </div>
     <div>
       <dt class="dt">{{t "Source"}}</dt>
-      <dd>{{if eq .User.Source "local"}}<span class="badge">{{t "Local account"}}</span>{{else}}<span class="badge">{{.User.Source}}</span>{{end}}</dd>
+      <dd><span class="badge">{{if eq .User.Source "local"}}{{t "Local account"}}{{else if eq .User.Source "ldap"}}{{t "Directory"}}{{else}}{{t "Federated"}}{{end}}</span></dd>
     </div>
     <div>
       <dt class="dt">{{t "Member since"}}</dt>
@@ -61,7 +61,7 @@
     <div>
       <dt class="dt">{{t "Groups"}}</dt>
       <dd class="flex flex-wrap gap-1.5">
-        {{range .Data.Groups}}<span class="badge">{{.Name}}</span>{{else}}<span class="text-faint">{{t "No groups yet"}}</span>{{end}}
+        {{range .Data.Groups}}<span class="chip cursor-default">{{.Name}}</span>{{else}}<span class="text-faint">{{t "No groups yet"}}</span>{{end}}
       </dd>
     </div>
   </dl>
@@ -69,7 +69,7 @@
 
 {{if eq .User.Source "local"}}
 <div class="card mt-4 space-y-4 p-6">
-  <h2 class="text-sm font-semibold">{{t "Photo"}}</h2>
+  <h3 class="text-sm font-semibold">{{t "Photo"}}</h3>
   <div class="flex items-center gap-4" data-upload>
     <span data-preview data-preview-class="size-12 shrink-0 rounded-full object-cover">
       {{if .User.PhotoMime}}<img class="size-12 shrink-0 rounded-full object-cover" src="/avatar/{{.User.ID}}" alt="">{{else}}<span class="avatar size-12 text-base {{avatarClass .User.Name}}">{{initials .User.Name}}</span>{{end}}
@@ -104,7 +104,7 @@
 {{if .Data.FactorsLocked}}<div class="alert-warning mb-4" role="status">{{t "To add or remove a two-factor method, sign out and sign in again with your passkey or authenticator code."}}</div>{{end}}
 <div class="card space-y-4 p-6">
   <div>
-    <h2 class="text-sm font-semibold">{{t "Two-factor authentication"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "Two-factor authentication"}}</h3>
     <p class="mt-1 text-xs text-muted">{{t "A time-based code from an authenticator app, required at each sign-in."}}</p>
   </div>
   {{if .Data.MFAEnabled}}
@@ -139,7 +139,7 @@
 {{if .Data.PasskeysEnabled}}
 <div class="card mt-4 space-y-4 p-6" data-passkeys>
   <div>
-    <h2 class="text-sm font-semibold">{{t "Passkeys"}}</h2>
+    <h3 class="text-sm font-semibold">{{t "Passkeys"}}</h3>
     <p class="mt-1 text-xs text-muted">{{t "Sign in without a password using your device's biometrics or a security key. A passkey satisfies both password and two-factor."}}</p>
   </div>
   {{if .Data.Passkeys}}
@@ -191,7 +191,7 @@
   <form method="post" action="/profile/password" class="card space-y-5 p-6">
     <input type="hidden" name="_csrf" value="{{.CSRF}}">
     <div>
-      <h2 class="text-sm font-semibold">{{t "Change password"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Change password"}}</h3>
       {{if eq .User.Source "ldap"}}
       <p class="mt-1 text-xs text-muted">{{t "Your password lives in the directory; the change is written back to it."}}</p>
       {{end}}

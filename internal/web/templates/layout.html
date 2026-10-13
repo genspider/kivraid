@@ -26,12 +26,12 @@
     </a>
     <nav class="flex min-w-0 items-center gap-1" aria-label="{{t "Main"}}">
       <a href="/" class="nav-link {{if eq .Active "home"}}nav-active{{end}}" {{if eq .Active "home"}}aria-current="page"{{end}}>{{t "Home"}}</a>
+      {{if .User.IsAdmin}}
+      <a href="/admin" class="nav-link {{if eq (navSection .Active) "admin"}}nav-active{{end}}">{{t "Administration"}}</a>
+      {{end}}
     </nav>
 
     <div class="ml-auto flex shrink-0 items-center gap-1">
-      {{if .User.IsAdmin}}
-      <a href="/admin" class="nav-icon {{if eq (navSection .Active) "admin"}}nav-active{{end}}" title="{{t "Administration"}}" aria-label="{{t "Administration"}}">{{icon "settings" "size-5"}}</a>
-      {{end}}
       <div class="relative ml-1" data-menu>
         <button type="button" data-menu-button aria-expanded="false" aria-controls="account-menu" class="flex cursor-pointer items-center rounded-full p-0.5 ring-white/0 transition hover:ring-2 hover:ring-white/40" aria-label="{{t "Account menu"}}">
           {{if .User.PhotoMime}}
@@ -127,20 +127,20 @@
 </select>
 <nav class="sidenav hidden md:block" aria-label="{{t "Administration"}}">
   <a href="/admin" class="sidenav-link {{if eq $a "dashboard"}}sidenav-active{{end}}" {{if eq $a "dashboard"}}aria-current="page"{{end}}>{{t "Overview"}}</a>
-  <h4 class="sidenav-title">{{t "Applications"}}</h4>
+  <p class="sidenav-title">{{t "Applications"}}</p>
   <a href="/admin/applications" class="sidenav-link {{if eq $a "apps"}}sidenav-active{{end}}" {{if eq $a "apps"}}aria-current="page"{{end}}>{{t "Applications"}}</a>
-  <h4 class="sidenav-title">{{t "Accounts"}}</h4>
+  <p class="sidenav-title">{{t "Accounts"}}</p>
   <a href="/admin/users" class="sidenav-link {{if eq $a "users"}}sidenav-active{{end}}" {{if eq $a "users"}}aria-current="page"{{end}}>{{t "Users"}}</a>
   <a href="/admin/groups" class="sidenav-link {{if eq $a "groups"}}sidenav-active{{end}}" {{if eq $a "groups"}}aria-current="page"{{end}}>{{t "Groups"}}</a>
-  <h4 class="sidenav-title">{{t "Identity sources"}}</h4>
+  <p class="sidenav-title">{{t "Identity sources"}}</p>
   <a href="/admin/ldap" class="sidenav-link {{if eq $a "ldap"}}sidenav-active{{end}}" {{if eq $a "ldap"}}aria-current="page"{{end}}>{{t "Directories"}}</a>
   <a href="/admin/providers" class="sidenav-link {{if eq $a "providers"}}sidenav-active{{end}}" {{if eq $a "providers"}}aria-current="page"{{end}}>{{t "Providers"}}</a>
   <a href="/admin/routing" class="sidenav-link {{if eq $a "routing"}}sidenav-active{{end}}" {{if eq $a "routing"}}aria-current="page"{{end}}>{{t "Login routing"}}</a>
-  <h4 class="sidenav-title">{{t "Settings"}}</h4>
+  <p class="sidenav-title">{{t "Settings"}}</p>
   <a href="/admin/settings/branding" class="sidenav-link {{if eq $a "branding"}}sidenav-active{{end}}" {{if eq $a "branding"}}aria-current="page"{{end}}>{{t "Branding"}}</a>
   <a href="/admin/settings/email" class="sidenav-link {{if eq $a "email"}}sidenav-active{{end}}" {{if eq $a "email"}}aria-current="page"{{end}}>{{t "Email"}}</a>
   <a href="/admin/settings/security" class="sidenav-link {{if eq $a "security"}}sidenav-active{{end}}" {{if eq $a "security"}}aria-current="page"{{end}}>{{t "Security"}}</a>
-  <h4 class="sidenav-title">{{t "System"}}</h4>
+  <p class="sidenav-title">{{t "System"}}</p>
   <a href="/admin/settings/system" class="sidenav-link {{if eq $a "system"}}sidenav-active{{end}}" {{if eq $a "system"}}aria-current="page"{{end}}>{{t "Diagnostics"}}</a>
   <a href="/admin/audit" class="sidenav-link {{if eq $a "audit"}}sidenav-active{{end}}" {{if eq $a "audit"}}aria-current="page"{{end}}>{{t "Activity"}}</a>
 </nav>
@@ -164,7 +164,7 @@
 
 {{define "iconcard"}}
 <div class="card space-y-4 p-6">
-  <h2 class="text-sm font-semibold">{{t "Icon"}}</h2>
+  <h3 class="text-sm font-semibold">{{t "Icon"}}</h3>
   <div class="flex items-center gap-4" data-upload>
     <span data-preview data-preview-class="size-12 shrink-0 rounded-xl object-cover">
     {{if .Data.App.IconMime}}
@@ -195,7 +195,7 @@
 
 {{define "accesspolicy"}}
 <div class="border-t border-line pt-5" data-access>
-  <h2 class="text-sm font-semibold">{{t "Access"}}</h2>
+  <h3 class="text-sm font-semibold">{{t "Access"}}</h3>
   {{if and .Data.App.Restricted (not .Data.Bound)}}
   <div class="alert-warning mt-3" role="alert">{{t "Nobody can sign in: this application is restricted to groups, but none are left (they were deleted). Choose groups below, or open it to everyone."}}</div>
   {{end}}
@@ -251,7 +251,7 @@
 <div class="card p-6" data-snippets>
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div class="min-w-0">
-      <h2 class="text-sm font-semibold">{{t "Set up the application"}}</h2>
+      <h3 class="text-sm font-semibold">{{t "Set up the application"}}</h3>
       <p class="mt-0.5 text-xs text-muted">{{t "Configuration to paste into the application, with this client's credentials filled in."}}</p>
     </div>
     <select class="select w-auto" data-snippet-select aria-label="{{t "Application type"}}">
