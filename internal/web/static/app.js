@@ -573,6 +573,16 @@ document.addEventListener("submit", (e) => {
   const btn = e.submitter;
   if (!btn || btn.dataset.noSpinner !== undefined) return;
   const label = btn.textContent.trim();
+  // A disabled button is left out of the submitted data, which is built
+  // after this event: carry a named button's value in a hidden field
+  // ("Save & sync" posts sync=1).
+  if (btn.name) {
+    const carry = document.createElement("input");
+    carry.type = "hidden";
+    carry.name = btn.name;
+    carry.value = btn.value;
+    e.target.appendChild(carry);
+  }
   btn.disabled = true;
   btn.dataset.width = btn.offsetWidth; // avoid a width jump
   btn.style.minWidth = btn.offsetWidth + "px";
