@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -432,16 +433,29 @@ func (m *Manager) findGroups(conn *goldap.Conn, src sqlcgen.LdapSource, userDN, 
 	return groups, nil
 }
 
+// photoTypes are the image formats accepted from the photo attribute, the
+// same as for photos uploaded in the portal.
+var photoTypes = []string{"image/jpeg", "image/png", "image/webp", "image/gif"}
+
 // upsertShadowUser creates or refreshes the local row mirroring the
 // directory identity (profile, photo), and syncs the user's memberships
 // in this source's groups.
 func (m *Manager) upsertShadowUser(ctx context.Context, src sqlcgen.LdapSource, entry *Entry) (sqlcgen.User, error) {
 	now := time.Now().UTC()
 
+	// Only a real image is kept: the photo attribute is user-writable in
+	// many directories, and anything else (HTML, SVG) must never be served
+	// back from Kivraid's origin.
 	var photoMime *string
 	if len(entry.Photo) > 0 {
 		mime := http.DetectContentType(entry.Photo)
-		photoMime = &mime
+		if slices.Contains(photoTypes, mime) {
+			photoMime = &mime
+		} else {
+			m.log.Warn("ldap photo ignored: not a JPEG, PNG, WebP or GIF image",
+				"username", entry.Username, "detected", mime)
+			entry.Photo = nil
+		}
 	}
 
 	user, err := m.store.GetUserByUsername(ctx, entry.Username)

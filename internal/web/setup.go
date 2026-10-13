@@ -122,9 +122,24 @@ func (s *Server) handleAvatar(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	w.Header().Set("Content-Type", *row.PhotoMime)
-	w.Header().Set("Cache-Control", "private, max-age=300")
-	w.Write(row.Photo)
+	servePhoto(w, r, row.Photo, *row.PhotoMime, "private, max-age=300")
+}
+
+// servePhoto writes a stored profile photo. Only the image types accepted
+// on upload are served, with nosniff and a sandboxing CSP, so stored bytes
+// can never run as a page on Kivraid's origin — the public avatar route
+// sits outside the security-headers middleware.
+func servePhoto(w http.ResponseWriter, r *http.Request, photo []byte, mime, cacheControl string) {
+	if !slices.Contains(allowedPhotoTypes, mime) {
+		http.NotFound(w, r)
+		return
+	}
+	h := w.Header()
+	h.Set("Content-Type", mime)
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Content-Security-Policy", "default-src 'none'; sandbox")
+	h.Set("Cache-Control", cacheControl)
+	w.Write(photo)
 }
 
 // handlePublicAvatar serves a user's profile photo without a session, for
@@ -137,9 +152,7 @@ func (s *Server) handlePublicAvatar(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	w.Header().Set("Content-Type", *row.PhotoMime)
-	w.Header().Set("Cache-Control", "public, max-age=300")
-	w.Write(row.Photo)
+	servePhoto(w, r, row.Photo, *row.PhotoMime, "public, max-age=300")
 }
 
 // handleProfilePhoto lets local users upload their picture; directory

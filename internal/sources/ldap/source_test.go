@@ -442,3 +442,32 @@ func TestAuthenticateDeniesUsernameCollision(t *testing.T) {
 		t.Fatalf("want ErrBadCredentials on collision, got %v", err)
 	}
 }
+
+// A photo attribute holding something other than an image (here HTML that
+// would run if served from Kivraid's origin) is dropped, not stored.
+func TestPhotoRejectsNonImages(t *testing.T) {
+	m, st := newTestManager(t)
+	ctx := context.Background()
+	src, err := st.GetLdapSource(ctx, "src1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entry := &Entry{
+		DN: "uid=eve," + testBaseDN, Username: "eve", Email: "eve@example.com", Name: "Eve",
+		Photo: []byte("<html><script>alert(document.cookie)</script></html>"),
+	}
+	user, err := m.upsertShadowUser(ctx, src, entry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(user.Photo) != 0 || user.PhotoMime != nil {
+		t.Fatalf("HTML photo kept: mime %v", user.PhotoMime)
+	}
+	row, err := st.GetUserPhoto(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(row.Photo) != 0 || row.PhotoMime != nil {
+		t.Fatalf("HTML photo stored: mime %v", row.PhotoMime)
+	}
+}
