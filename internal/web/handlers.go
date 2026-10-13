@@ -244,6 +244,15 @@ func (s *Server) completeLogin(w http.ResponseWriter, r *http.Request, user sqlc
 	if err := s.sessions.RenewToken(r.Context()); err != nil {
 		return err
 	}
+	// A sign-in starts a session of its own: state left by an earlier one
+	// in this browser (an impersonation and its exemptions, a federated
+	// sign-in's upstream logout) must not carry over to it.
+	for _, key := range []string{
+		session.KeyImpersonator, session.KeyImpersonatorName, session.KeyImpersonatorSID,
+		session.KeyUpstreamProvider, session.KeyUpstreamIDToken,
+	} {
+		s.sessions.Remove(r.Context(), key)
+	}
 	// A new sign-in gets a new sid, except when the same user signs in
 	// again in this session (an application asked to re-authenticate): the
 	// applications already opened stay attached to it for logout.
