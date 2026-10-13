@@ -163,6 +163,7 @@ func NewServer(d Deps) (*Server, error) {
 	}
 	if d.OIDCStore != nil {
 		s.backchannel = oidcserver.NewBackchannelLogout(d.OIDCStore, d.Log)
+		d.OIDCStore.SetAccessCheck(s.oidcAccessAllowed)
 	}
 
 	// Load the admin-editable branding before first render; defaults are

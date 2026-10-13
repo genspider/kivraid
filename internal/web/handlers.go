@@ -549,6 +549,34 @@ func (s *Server) handleOIDCResume(w http.ResponseWriter, r *http.Request) {
 // userCanAccessApp evaluates the group policy. An unrestricted application
 // is open to every authenticated user; a restricted one only to members of
 // its groups — and to nobody once those groups are gone (fail closed).
+// oidcAccessAllowed reports whether userID may still use the OIDC client:
+// the account exists and is active, and the application's access policy
+// admits it. The token endpoint runs it on every refresh.
+func (s *Server) oidcAccessAllowed(ctx context.Context, clientID, userID string) (bool, error) {
+	user, err := s.store.GetUserByID(ctx, userID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if !user.Active {
+		return false, nil
+	}
+	provider, err := s.store.GetProviderByClientID(ctx, clientID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	app, err := s.store.GetApplication(ctx, provider.ApplicationID)
+	if err != nil {
+		return false, err
+	}
+	return s.userCanAccessApp(ctx, app, userID)
+}
+
 func (s *Server) userCanAccessApp(ctx context.Context, app sqlcgen.Application, userID string) (bool, error) {
 	if !app.Restricted {
 		return true, nil

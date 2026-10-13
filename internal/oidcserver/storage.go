@@ -49,6 +49,17 @@ type Storage struct {
 	keyMu sync.RWMutex
 	key   *signingKey // the key tokens are signed with (the configured alg)
 	keys  []op.Key    // all active public keys, published in the JWKS
+
+	// accessCheck, set by the web layer, decides whether a user may still
+	// use a client: the account is active and the application's access
+	// policy admits them. Refresh runs it, since policies change after a
+	// refresh token is issued.
+	accessCheck func(ctx context.Context, clientID, userID string) (bool, error)
+}
+
+// SetAccessCheck installs the policy check run on every refresh.
+func (s *Storage) SetAccessCheck(check func(ctx context.Context, clientID, userID string) (bool, error)) {
+	s.accessCheck = check
 }
 
 var _ op.Storage = (*Storage)(nil)
@@ -439,6 +450,20 @@ func (s *Storage) TokenRequestByRefreshToken(ctx context.Context, refreshToken s
 	row, err := s.store.GetRefreshToken(ctx, HashToken(refreshToken))
 	if err != nil || time.Now().UTC().After(row.ExpiresAt) {
 		return nil, op.ErrInvalidRefreshToken
+	}
+	// A user removed from the application's groups (or an application
+	// restricted since) must not keep refreshing: the token dies with the
+	// access it no longer grants.
+	if s.accessCheck != nil {
+		allowed, err := s.accessCheck(ctx, row.ClientID, row.UserID)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			_ = s.store.DeleteAccessTokensByRefreshToken(ctx, &row.ID)
+			_ = s.store.DeleteRefreshToken(ctx, row.ID)
+			return nil, op.ErrInvalidRefreshToken
+		}
 	}
 	return &refreshTokenRequest{row: row, scopes: decodeJSONList(row.Scopes)}, nil
 }
