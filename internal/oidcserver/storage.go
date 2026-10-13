@@ -184,6 +184,12 @@ func notFound(err error) error {
 // --- Auth requests -------------------------------------------------------
 
 func (s *Storage) CreateAuthRequest(ctx context.Context, r *oidc.AuthRequest, userID string) (op.AuthRequest, error) {
+	// Only S256 is advertised. "plain" (also the default when the method is
+	// omitted) puts the verifier itself in the authorization URL, so
+	// whoever sees that URL can redeem the code.
+	if r.CodeChallenge != "" && r.CodeChallengeMethod != oidc.CodeChallengeMethodS256 {
+		return nil, oidc.ErrInvalidRequest().WithDescription("code_challenge_method must be S256")
+	}
 	now := time.Now().UTC()
 	// Opportunistic cleanup keeps the table from growing without a
 	// dedicated background job.
