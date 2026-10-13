@@ -55,7 +55,13 @@ On a successful upstream login, Kivraid resolves the account in this order:
 1. **Already linked** — a user matching this provider and `sub` signs in.
 2. **Link by email** — an existing local/LDAP account is linked **only when
    the email is verified on both sides**, to avoid account takeover. A
-   collision on an unverified email is refused, not hijacked.
+   collision on an unverified email is refused, not hijacked. The
+   provider's `email_verified` only counts when the address comes from the
+   standard `email` claim. Protected accounts are never linked
+   automatically: administrators, accounts with their own two-factor
+   (authenticator app or passkey), and accounts already linked to another
+   provider — a federated sign-in counts as two-factor, so linking would
+   bypass theirs.
 3. **Provision** — otherwise a new federated user is created, if the provider
    allows sign-up.
 

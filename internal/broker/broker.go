@@ -204,11 +204,14 @@ func (m *Manager) HandleCallback(w http.ResponseWriter, r *http.Request, p sqlcg
 }
 
 // mapIdentity applies the provider's claim mapping to the userinfo response.
+// email_verified describes the standard email claim only: when the
+// provider maps the address from another claim (preferred_username, upn…),
+// nothing vouches for it, and it is treated as unverified.
 func (m *Manager) mapIdentity(p sqlcgen.UpstreamProvider, ui *oidc.UserInfo) *Identity {
 	return &Identity{
 		Subject:       ui.GetSubject(),
 		Email:         strings.ToLower(strings.TrimSpace(claimString(ui, p.ClaimEmail))),
-		EmailVerified: bool(ui.EmailVerified),
+		EmailVerified: bool(ui.EmailVerified) && strings.EqualFold(p.ClaimEmail, "email"),
 		Name:          claimString(ui, p.ClaimName),
 		Groups:        claimStrings(ui, p.ClaimGroups),
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/kivraid/kivraid/internal/config"
 	"github.com/kivraid/kivraid/internal/session"
 	"github.com/kivraid/kivraid/internal/sources/local"
+	"github.com/kivraid/kivraid/internal/store"
 	"github.com/kivraid/kivraid/internal/store/sqlcgen"
 	"github.com/kivraid/kivraid/internal/store/storetest"
 )
@@ -21,24 +22,9 @@ import (
 func TestUpstreamGroupsDoNotJoinLocalGroups(t *testing.T) {
 	st := storetest.Open(t)
 	ctx := context.Background()
-	cfg := config.Config{BaseURL: "http://localhost", SecretKey: strings.Repeat("k", 32),
-		Session: config.Session{Lifetime: config.Duration(time.Hour)}}
-	srv, err := NewServer(Deps{
-		Config: cfg, Store: st, Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
-		Sessions: session.NewManager(st.DB, st.Driver, false, time.Hour, 0),
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv := newServerInstance(t, st)
 	now := time.Now().UTC()
-	p, err := st.CreateUpstreamProvider(ctx, sqlcgen.CreateUpstreamProviderParams{
-		ID: "up1", Name: "Forge", Issuer: "https://forge.example.com", ClientID: "kivraid",
-		Scopes: "openid", ClaimEmail: "email", ClaimName: "name", ClaimGroups: "groups",
-		Enabled: true, CreatedAt: now, UpdatedAt: now,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	p := newUpstreamProvider(t, st, "up1")
 	admins, err := st.CreateGroup(ctx, sqlcgen.CreateGroupParams{ID: "g-admins", Name: "admins", Source: "local", CreatedAt: now})
 	if err != nil {
 		t.Fatal(err)
@@ -71,4 +57,34 @@ func TestUpstreamGroupsDoNotJoinLocalGroups(t *testing.T) {
 	if n, err := st.CountAdminGroupMemberships(ctx, user.ID); err != nil || n != 0 {
 		t.Errorf("admin-granting memberships: %d (err %v)", n, err)
 	}
+}
+
+// newServerInstance builds a Server (not wrapped in an HTTP test server)
+// for tests that call its methods directly.
+func newServerInstance(t *testing.T, st *store.Store) *Server {
+	t.Helper()
+	cfg := config.Config{BaseURL: "http://localhost", SecretKey: strings.Repeat("k", 32),
+		Session: config.Session{Lifetime: config.Duration(time.Hour)}}
+	srv, err := NewServer(Deps{
+		Config: cfg, Store: st, Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Sessions: session.NewManager(st.DB, st.Driver, false, time.Hour, 0),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return srv
+}
+
+func newUpstreamProvider(t *testing.T, st *store.Store, id string) sqlcgen.UpstreamProvider {
+	t.Helper()
+	now := time.Now().UTC()
+	p, err := st.CreateUpstreamProvider(context.Background(), sqlcgen.CreateUpstreamProviderParams{
+		ID: id, Name: "Forge " + id, Issuer: "https://" + id + ".example.com", ClientID: "kivraid",
+		Scopes: "openid", ClaimEmail: "email", ClaimName: "name", ClaimGroups: "groups",
+		Enabled: true, CreatedAt: now, UpdatedAt: now,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p
 }

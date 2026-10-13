@@ -20,6 +20,7 @@ var (
 	errSignupDisabled  = errors.New("federated sign-up disabled")
 	errEmailCollision  = errors.New("email already in use")
 	errAccountInactive = errors.New("account inactive")
+	errLinkRefused     = errors.New("automatic link refused")
 )
 
 func (s *Server) loadEnabledProvider(w http.ResponseWriter, r *http.Request) (sqlcgen.UpstreamProvider, bool) {
@@ -88,6 +89,10 @@ func (s *Server) handleUpstreamLoginCallback(w http.ResponseWriter, r *http.Requ
 		s.renderError(w, r, http.StatusConflict, s.t(r, "Email already in use"),
 			s.t(r, "An existing account uses this email but it hasn't been verified, so it can't be linked automatically. Ask an administrator."))
 		return
+	case errors.Is(err, errLinkRefused):
+		s.renderError(w, r, http.StatusConflict, s.t(r, "Account not linked"),
+			s.t(r, "An existing account uses this email, but it is protected (an administrator, or an account with its own two-factor or already linked to another provider), so it is not linked automatically. Ask an administrator."))
+		return
 	case errors.Is(err, errAccountInactive):
 		s.renderError(w, r, http.StatusForbidden, s.t(r, "Account disabled"),
 			s.t(r, "This account is deactivated. Ask an administrator."))
@@ -144,6 +149,12 @@ func (s *Server) provisionUpstreamUser(ctx context.Context, p sqlcgen.UpstreamPr
 			if !existing.EmailVerified {
 				return sqlcgen.User{}, errEmailCollision
 			}
+			if protected, err := s.linkProtected(ctx, p, existing); err != nil {
+				return sqlcgen.User{}, err
+			} else if protected {
+				s.log.Warn("federated login: automatic link refused", "provider", p.Name, "user", existing.Username)
+				return sqlcgen.User{}, errLinkRefused
+			}
 			if err := s.store.SetUserUpstreamIdentity(ctx, sqlcgen.SetUserUpstreamIdentityParams{
 				UpstreamSourceID: &p.ID, ExternalID: &ident.Subject, UpdatedAt: now, ID: existing.ID,
 			}); err != nil {
@@ -174,6 +185,34 @@ func (s *Server) provisionUpstreamUser(ctx context.Context, p sqlcgen.UpstreamPr
 		return sqlcgen.User{}, errEmailCollision
 	}
 	return user, cerr
+}
+
+// linkProtected reports whether an existing account must not be linked to
+// an upstream identity on the strength of a matching email alone. Linking
+// hands the account to whoever controls that identity at the provider, and
+// federated sign-ins count as two-factor: an administrator account, an
+// account with its own second factor, or one already linked to another
+// provider would lose its protection.
+func (s *Server) linkProtected(ctx context.Context, p sqlcgen.UpstreamProvider, user sqlcgen.User) (bool, error) {
+	if user.UpstreamSourceID != nil && *user.UpstreamSourceID != p.ID {
+		return true, nil
+	}
+	if err := s.applyEffectiveAdmin(ctx, &user); err != nil {
+		return false, err
+	}
+	if user.IsAdmin || user.TotpEnabled {
+		return true, nil
+	}
+	if s.webauthn != nil {
+		n, err := s.webauthn.Count(ctx, user.ID)
+		if err != nil {
+			return false, err
+		}
+		if n > 0 {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // refreshUpstreamProfile updates the display name and mirrors the provider's
