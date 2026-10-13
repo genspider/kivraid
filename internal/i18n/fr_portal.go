@@ -146,6 +146,7 @@ func init() {
 		"Regenerate recovery codes":                                                 "Régénérer les codes de secours",
 		"Disable two-factor":                                                        "Désactiver la double authentification",
 		"Please confirm":                                                            "Veuillez confirmer",
+		"Dismiss":                                                                   "Fermer",
 		"Disable two-factor?":                                                       "Désactiver la double authentification ?",
 		"Your account will be protected by your password alone. You can turn two-factor back on at any time.": "Votre compte ne sera plus protégé que par votre mot de passe. Vous pourrez réactiver la double authentification à tout moment.",
 		"Enable two-factor": "Activer la double authentification",

@@ -476,42 +476,71 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Transient toast notifications (bottom-center), driven by [data-flash]
-// elements the server renders and by client-side actions.
-function showToast(message, variant) {
+// elements the server renders and by client-side actions. The live region
+// exists before any message goes in, so screen readers announce it; errors
+// are alerts. A toast stays while hovered or focused, and can be closed.
+function toastRegion() {
   let region = document.getElementById("toast-region");
   if (!region) {
     region = document.createElement("div");
     region.id = "toast-region";
     region.className = "toast-region";
+    region.setAttribute("aria-live", "polite");
     document.body.append(region);
   }
+  return region;
+}
+
+function showToast(message, variant) {
+  const region = toastRegion();
+  const danger = variant === "danger";
   const toast = document.createElement("div");
   toast.className = "toast";
-  toast.setAttribute("role", "status");
+  toast.setAttribute("role", danger ? "alert" : "status");
   const dot = document.createElement("span");
   dot.className = "toast-dot";
-  dot.style.background =
-    variant === "danger" ? "var(--danger)" : "var(--accent)";
-  toast.append(dot, document.createTextNode(message));
+  dot.style.background = danger ? "var(--danger)" : "var(--accent)";
+  const text = document.createElement("span");
+  text.textContent = message;
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "toast-close";
+  close.setAttribute("aria-label", tr("Dismiss"));
+  close.textContent = "×";
+  toast.append(dot, text, close);
   region.append(toast);
-  setTimeout(() => {
+
+  const leave = () => {
+    if (toast.dataset.leaving !== undefined) return;
     toast.dataset.leaving = "";
     toast.addEventListener("animationend", () => toast.remove());
-  }, 3200);
+  };
+  let timer = null;
+  const arm = () => (timer = setTimeout(leave, danger ? 8000 : 5000));
+  const pause = () => clearTimeout(timer);
+  close.addEventListener("click", leave);
+  toast.addEventListener("mouseenter", pause);
+  toast.addEventListener("mouseleave", arm);
+  toast.addEventListener("focusin", pause);
+  toast.addEventListener("focusout", arm);
+  arm();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  for (const el of document.querySelectorAll("[data-flash]")) {
-    showToast(el.dataset.flash, el.dataset.variant);
-    el.remove();
-  }
+  toastRegion();
+  const flashes = [...document.querySelectorAll("[data-flash]")];
+  for (const el of flashes) el.remove();
+  // Let the new live region register before filling it.
+  setTimeout(() => {
+    for (const el of flashes) showToast(el.dataset.flash, el.dataset.variant);
+  }, 150);
 });
 
-// Confirmation modal for destructive forms: a form carrying data-confirm
-// opens a proper dialog instead of the native confirm() popup. On confirm
-// the original form is submitted directly (which does not re-fire submit,
-// so the guard is not re-entered). CSP forbids inline handlers, hence the
-// delegated listener.
+// Confirmation modal for destructive forms: a form (or button) carrying
+// data-confirm opens a proper dialog instead of the native confirm()
+// popup. On confirm the form is submitted again through the same button,
+// and a flag lets that submit through the guard. CSP forbids inline
+// handlers, hence the delegated listener.
 const confirmState = { form: null, submitter: null, confirmed: false };
 
 function ensureConfirmDialog() {
@@ -520,9 +549,11 @@ function ensureConfirmDialog() {
   dlg = document.createElement("dialog");
   dlg.id = "confirm-dialog";
   dlg.className = "modal";
+  dlg.setAttribute("aria-labelledby", "confirm-dialog-title");
+  dlg.setAttribute("aria-describedby", "confirm-dialog-body");
   dlg.innerHTML = `
-    <h2 data-confirm-title class="text-base font-semibold tracking-tight"></h2>
-    <p data-confirm-body class="mt-2 text-sm text-muted"></p>
+    <h2 id="confirm-dialog-title" data-confirm-title class="text-base font-semibold tracking-tight"></h2>
+    <p id="confirm-dialog-body" data-confirm-body class="mt-2 text-sm text-muted"></p>
     <div class="mt-6 flex justify-end gap-3">
       <button type="button" data-confirm-cancel class="btn-secondary">${tr("Cancel")}</button>
       <button type="button" data-confirm-ok class="btn-primary"></button>
@@ -619,13 +650,22 @@ document.addEventListener("click", (e) => {
     syncMenuAria(menu);
   }
 });
+// Escape closes an open menu and returns focus to its button; moving
+// focus out of a menu (Tab past its last entry) closes it too.
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    for (const menu of document.querySelectorAll("[data-menu]")) {
-      menu.classList.remove("menu-open");
-      syncMenuAria(menu);
-    }
+  if (e.key !== "Escape") return;
+  for (const menu of document.querySelectorAll("[data-menu].menu-open")) {
+    menu.classList.remove("menu-open");
+    syncMenuAria(menu);
+    menu.querySelector("[data-menu-button]")?.focus();
   }
+});
+document.addEventListener("focusout", (e) => {
+  const menu = e.target.closest && e.target.closest("[data-menu]");
+  if (!menu || !menu.classList.contains("menu-open")) return;
+  if (e.relatedTarget && menu.contains(e.relatedTarget)) return;
+  menu.classList.remove("menu-open");
+  syncMenuAria(menu);
 });
 
 // ---- WebAuthn / passkeys ----

@@ -863,6 +863,9 @@
   .toast-dot {
     @apply size-2 shrink-0 rounded-full;
   }
+  .toast-close {
+    @apply -mr-1.5 ml-1 inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-base leading-none text-faint hover:bg-raised hover:text-fg;
+  }
   @keyframes toast-in {
     from {
       opacity: 0;

@@ -33,21 +33,21 @@
       <a href="/admin" class="nav-icon {{if eq (navSection .Active) "admin"}}nav-active{{end}}" title="{{t "Administration"}}" aria-label="{{t "Administration"}}">{{icon "settings" "size-5"}}</a>
       {{end}}
       <div class="relative ml-1" data-menu>
-        <button type="button" data-menu-button aria-haspopup="menu" aria-expanded="false" class="flex cursor-pointer items-center rounded-full p-0.5 ring-white/0 transition hover:ring-2 hover:ring-white/40" aria-label="{{t "Account menu"}}">
+        <button type="button" data-menu-button aria-expanded="false" aria-controls="account-menu" class="flex cursor-pointer items-center rounded-full p-0.5 ring-white/0 transition hover:ring-2 hover:ring-white/40" aria-label="{{t "Account menu"}}">
           {{if .User.PhotoMime}}
           <img class="size-8 rounded-full object-cover" src="/avatar/{{.User.ID}}" alt="">
           {{else}}
           <span class="avatar {{avatarClass .User.Name}} ring-2 ring-white/30 {{avatarClass .User.Name}}">{{initials .User.Name}}</span>
           {{end}}
         </button>
-        <div class="menu-panel" role="menu">
+        <div class="menu-panel" id="account-menu">
           <div class="px-4 py-2">
             <div class="truncate text-sm font-semibold">{{.User.Name}}</div>
             <div class="truncate text-xs text-faint">{{.User.Username}}{{with .User.Email}} · {{.}}{{end}}</div>
           </div>
           <div class="menu-divider"></div>
-          <a href="/profile" class="menu-item" role="menuitem">{{icon "user"}} {{t "Account settings"}}</a>
-          <a href="/sessions" class="menu-item" role="menuitem">{{icon "monitor"}} {{t "Sessions"}}</a>
+          <a href="/profile" class="menu-item">{{icon "user"}} {{t "Account settings"}}</a>
+          <a href="/sessions" class="menu-item">{{icon "monitor"}} {{t "Sessions"}}</a>
           <div class="menu-divider"></div>
           <div class="flex items-center justify-between gap-3 px-4 py-1.5">
             <span class="text-sm">{{t "Theme"}}</span>
@@ -66,7 +66,7 @@
           <div class="menu-divider"></div>
           <form method="post" action="/logout">
             <input type="hidden" name="_csrf" value="{{.CSRF}}">
-            <button type="submit" class="menu-item" role="menuitem">{{icon "sign-out"}} {{t "Sign out"}}</button>
+            <button type="submit" class="menu-item">{{icon "sign-out"}} {{t "Sign out"}}</button>
           </form>
           {{with version}}<div class="mt-1 border-t border-line-soft px-4 pt-2 pb-1 text-[11px] text-faint">{{brandName}} <span class="font-mono">{{.}}</span></div>{{end}}
         </div>
