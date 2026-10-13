@@ -106,7 +106,7 @@ Usage:
   kivraid user list   [--config kivraid.yaml]
   kivraid user reset-password [--config kivraid.yaml] --user U
                       [--password P] [--must-change]
-  kivraid user reset-mfa      [--config kivraid.yaml] --user U
+  kivraid user reset-mfa      [--config kivraid.yaml] --user U [--passkeys]
   kivraid user promote        [--config kivraid.yaml] --user U
 
   --user takes a username or an email address.

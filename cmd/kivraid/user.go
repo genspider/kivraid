@@ -291,6 +291,7 @@ func userResetMFA(args []string) error {
 	fs := flag.NewFlagSet("user reset-mfa", flag.ExitOnError)
 	cfgPath := fs.String("config", "kivraid.yaml", "path to the configuration file")
 	ident := fs.String("user", "", "username or email of the account (required)")
+	passkeys := fs.Bool("passkeys", false, "also remove the account's passkeys (a lost or stolen device)")
 	fs.Parse(args)
 
 	ctx := context.Background()
@@ -304,20 +305,40 @@ func userResetMFA(args []string) error {
 	if err != nil {
 		return err
 	}
-	if !user.TotpEnabled {
-		fmt.Printf("%s has no authenticator app enrolled; nothing to reset\n", user.Username)
+	var creds []sqlcgen.WebauthnCredential
+	if *passkeys {
+		if creds, err = env.store.ListWebauthnCredentials(ctx, user.ID); err != nil {
+			return err
+		}
+	}
+	if !user.TotpEnabled && len(creds) == 0 {
+		fmt.Printf("%s has no authenticator app enrolled; nothing to reset", user.Username)
+		if !*passkeys {
+			fmt.Print(" (add --passkeys to remove passkeys)")
+		}
+		fmt.Println()
 		return nil
 	}
 	// Same effect as the admin's "Reset two-factor": the secret and the
-	// recovery codes are dropped. Passkeys are kept.
-	if err := mfa.NewManager(env.store, secrets.DeriveKey(env.cfg.SecretKey, "totp-secrets")).Disable(ctx, user.ID); err != nil {
-		return err
+	// recovery codes are dropped. Passkeys go too with --passkeys: a passkey
+	// signs in on its own, so one on a stolen device keeps working.
+	if user.TotpEnabled {
+		if err := mfa.NewManager(env.store, secrets.DeriveKey(env.cfg.SecretKey, "totp-secrets")).Disable(ctx, user.ID); err != nil {
+			return err
+		}
+		env.audit.Record(ctx, cliActor, audit.ActionMFADisable, user.Username, "reset from the command line", "")
+	}
+	for _, c := range creds {
+		if err := env.store.DeleteWebauthnCredential(ctx, sqlcgen.DeleteWebauthnCredentialParams{ID: c.ID, UserID: user.ID}); err != nil {
+			return err
+		}
+		env.audit.Record(ctx, cliActor, audit.ActionPasskeyRemove, user.Username, c.Name, "")
 	}
 	if err := env.revokeAccess(ctx, user.ID); err != nil {
 		return err
 	}
-	env.audit.Record(ctx, cliActor, audit.ActionMFADisable, user.Username, "reset from the command line", "")
-	fmt.Printf("two-factor authentication reset for %s; their sessions and tokens were revoked, and they can sign in with their password and enroll again\n", user.Username)
+	fmt.Printf("two-factor authentication reset for %s (%d passkey(s) removed); their sessions and tokens were revoked, and they can sign in with their password and enroll again\n",
+		user.Username, len(creds))
 	return nil
 }
 

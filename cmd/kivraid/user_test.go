@@ -242,3 +242,32 @@ func TestFindUserAmbiguous(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// --passkeys also removes the account's passkeys, which sign in on their
+// own: one on a stolen device would outlive the reset.
+func TestUserResetMFAPasskeys(t *testing.T) {
+	cfg := testInstance(t)
+	env := openTestStore(t, cfg)
+	ctx := context.Background()
+	user, err := local.NewSource(env.store).CreateUser(ctx, "dana", "dana@example.com", "Dana", "first-pass-123", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := env.store.CreateWebauthnCredential(ctx, sqlcgen.CreateWebauthnCredentialParams{
+		ID: "pk1", UserID: user.ID, CredentialID: "cred-1", Name: "Phone", Data: "{}", CreatedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := userResetMFA([]string{"--config", cfg, "--user", "dana"}); err != nil {
+		t.Fatal(err)
+	}
+	if n, _ := env.store.CountWebauthnCredentials(ctx, user.ID); n != 1 {
+		t.Fatalf("without --passkeys the passkey stays, got %d", n)
+	}
+	if err := userResetMFA([]string{"--config", cfg, "--user", "dana", "--passkeys"}); err != nil {
+		t.Fatal(err)
+	}
+	if n, _ := env.store.CountWebauthnCredentials(ctx, user.ID); n != 0 {
+		t.Errorf("--passkeys should remove the passkey, %d left", n)
+	}
+}

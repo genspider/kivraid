@@ -98,7 +98,7 @@ their password with no email delivery configured, or was deactivated:
 
 ```sh
 kivraid user list           --config kivraid.yaml
-kivraid user reset-mfa      --config kivraid.yaml --user admin
+kivraid user reset-mfa      --config kivraid.yaml --user admin [--passkeys]
 kivraid user reset-password --config kivraid.yaml --user admin [--must-change]
 kivraid user promote        --config kivraid.yaml --user alice@example.com
 ```
@@ -106,8 +106,9 @@ kivraid user promote        --config kivraid.yaml --user alice@example.com
 `reset-password` and `reset-mfa` also sign the user out everywhere
 (sessions, OAuth tokens, back-channel logout). `--user` takes a username or
 an email address. `reset-mfa` removes the
-authenticator app and its recovery codes (passkeys are kept), as the admin's
-*Reset two-factor* does. `reset-password` prompts for the new password,
+authenticator app and its recovery codes, as the admin's *Reset two-factor*
+does; add `--passkeys` to remove the passkeys too (a passkey signs in on its
+own, so one on a lost or stolen device must go). `reset-password` prompts for the new password,
 which must follow the password policy; it only applies to local accounts —
 change a directory account's password in the directory. `promote` makes the
 account an administrator and reactivates it. Each change is recorded in the
