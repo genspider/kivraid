@@ -63,7 +63,7 @@
           <div class="flex items-center justify-between gap-3 px-4 py-1.5">
             <span class="text-sm">{{t "Language"}}</span>
             <div class="theme-seg">
-              {{range languages}}<a href="/lang?set={{.Code}}" lang="{{.Code}}" title="{{.Name}}" class="theme-seg-btn uppercase {{if eq .Code lang}}theme-seg-active{{end}}" {{if eq .Code lang}}aria-current="true"{{end}}>{{.Code}}</a>{{end}}
+              {{range languages}}<a href="/lang?set={{.Code}}" lang="{{.Code}}" title="{{.Name}}" class="theme-seg-btn uppercase {{if eq .Code lang}}theme-seg-active{{end}}" {{if eq .Code lang}}aria-current="true"{{end}}>{{.Label}}</a>{{end}}
             </div>
           </div>
           <div class="menu-divider"></div>

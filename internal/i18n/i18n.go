@@ -15,12 +15,17 @@ const Default = "en"
 
 // Language is a supported UI language.
 type Language struct {
-	Code string // BCP 47 base tag, e.g. "fr"
-	Name string // native name, for the language picker
+	Code  string // BCP 47 base tag, e.g. "fr"
+	Name  string // native name, for the picker's tooltip
+	Label string // short native label shown in the picker itself
 }
 
 // Languages lists the supported languages, in picker order.
-var Languages = []Language{{"en", "English"}, {"fr", "Français"}}
+var Languages = []Language{
+	{Code: "en", Name: "English", Label: "en"},
+	{Code: "fr", Name: "Français", Label: "fr"},
+	{Code: "zh", Name: "简体中文", Label: "简体"},
+}
 
 var catalogs = map[string]map[string]string{}
 
